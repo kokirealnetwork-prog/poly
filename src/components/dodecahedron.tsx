@@ -27,20 +27,19 @@ export function Dodecahedron() {
 
     const geometry = new THREE.DodecahedronGeometry(2, 0);
     const material = new THREE.MeshPhysicalMaterial({
-      color: 0xc9ff3d,
-      roughness: 0.38,
-      metalness: 0.05,
-      clearcoat: 0.18,
-      clearcoatRoughness: 0.5,
+      color: 0xf2a7bd,
+      roughness: 0.82,
+      metalness: 0,
+      clearcoat: 0,
       flatShading: true,
     });
     const solid = new THREE.Mesh(geometry, material);
 
     const edgeGeometry = new THREE.EdgesGeometry(geometry, 12);
     const edgeMaterial = new THREE.LineBasicMaterial({
-      color: 0x17210c,
+      color: 0x4e2834,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.3,
     });
     const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
 
