@@ -3,6 +3,61 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+type Face = {
+  center: THREE.Vector3;
+  normal: THREE.Vector3;
+  vertices: THREE.Vector3[];
+};
+
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+function getFaces(geometry: THREE.BufferGeometry): Face[] {
+  const position = geometry.getAttribute("position");
+  const clusters: { normal: THREE.Vector3; vertices: THREE.Vector3[] }[] = [];
+
+  for (let index = 0; index < position.count; index += 3) {
+    const a = new THREE.Vector3().fromBufferAttribute(position, index);
+    const b = new THREE.Vector3().fromBufferAttribute(position, index + 1);
+    const c = new THREE.Vector3().fromBufferAttribute(position, index + 2);
+    const normal = new THREE.Vector3()
+      .crossVectors(b.clone().sub(a), c.clone().sub(a))
+      .normalize();
+    let cluster = clusters.find((face) => face.normal.dot(normal) > 0.999);
+
+    if (!cluster) {
+      cluster = { normal, vertices: [] };
+      clusters.push(cluster);
+    }
+
+    for (const vertex of [a, b, c]) {
+      if (!cluster.vertices.some((point) => point.distanceToSquared(vertex) < 1e-8)) {
+        cluster.vertices.push(vertex);
+      }
+    }
+  }
+
+  return clusters.map(({ normal, vertices }) => {
+    const center = vertices
+      .reduce((sum, vertex) => sum.add(vertex), new THREE.Vector3())
+      .multiplyScalar(1 / vertices.length);
+    const horizontal = vertices[0].clone().sub(center).normalize();
+    const vertical = new THREE.Vector3().crossVectors(normal, horizontal);
+    const sortedVertices = vertices.toSorted(
+      (a, b) =>
+        Math.atan2(
+          a.clone().sub(center).dot(vertical),
+          a.clone().sub(center).dot(horizontal),
+        ) -
+        Math.atan2(
+          b.clone().sub(center).dot(vertical),
+          b.clone().sub(center).dot(horizontal),
+        ),
+    );
+
+    return { center, normal, vertices: sortedVertices };
+  });
+}
+
 export function Dodecahedron() {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +102,59 @@ export function Dodecahedron() {
     shape.add(solid, edges);
     shape.rotation.set(-0.28, 0.5, 0.08);
     scene.add(shape);
+
+    const faces = getFaces(geometry);
+    const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xff2f87 });
+    const outline = new THREE.Group();
+    const outlineEdges = Array.from({ length: 5 }, () => {
+      const edge = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.026, 0.026, 1, 8),
+        outlineMaterial,
+      );
+      outline.add(edge);
+      return edge;
+    });
+    shape.add(outline);
+
+    const showSelectedFace = (face: Face) => {
+      const offset = face.normal.clone().multiplyScalar(0.035);
+
+      outlineEdges.forEach((edge, index) => {
+        const start = face.vertices[index].clone().add(offset);
+        const end = face.vertices[(index + 1) % face.vertices.length]
+          .clone()
+          .add(offset);
+        const direction = end.clone().sub(start);
+
+        edge.position.copy(start).add(end).multiplyScalar(0.5);
+        edge.scale.set(1, direction.length(), 1);
+        edge.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
+      });
+    };
+
+    let selectedFaceIndex = 0;
+    const updateSelectedFace = (vibrate = true) => {
+      shape.updateMatrixWorld();
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      let nearestIndex = selectedFaceIndex;
+
+      faces.forEach((face, index) => {
+        const worldCenter = face.center.clone().applyMatrix4(shape.matrixWorld);
+        const distance = worldCenter.distanceToSquared(camera.position);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      });
+
+      if (nearestIndex !== selectedFaceIndex) {
+        selectedFaceIndex = nearestIndex;
+        showSelectedFace(faces[selectedFaceIndex]);
+        if (vibrate) navigator.vibrate?.(18);
+      }
+    };
+    updateSelectedFace(false);
+    showSelectedFace(faces[selectedFaceIndex]);
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x5b674b, 2.1));
     const keyLight = new THREE.DirectionalLight(0xffffff, 4.2);
@@ -132,6 +240,7 @@ export function Dodecahedron() {
         velocityY *= 0.94;
       }
 
+      updateSelectedFace();
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(animate);
     };
@@ -148,6 +257,8 @@ export function Dodecahedron() {
       edgeGeometry.dispose();
       material.dispose();
       edgeMaterial.dispose();
+      outlineEdges.forEach((edge) => edge.geometry.dispose());
+      outlineMaterial.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
