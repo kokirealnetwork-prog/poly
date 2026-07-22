@@ -109,13 +109,20 @@ export function Dodecahedron() {
     scene.add(shape);
 
     const faces = getFaces(geometry);
-    const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xff2f87 });
+    const outlineMaterial = new THREE.MeshBasicMaterial({
+      color: 0xc73c93,
+      depthTest: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
     const outlineGeometry = new THREE.BufferGeometry();
     const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
+    outline.renderOrder = 1;
     shape.add(outline);
 
     const showSelectedFace = (face: Face) => {
-      const offset = face.normal.clone().multiplyScalar(0.006);
+      const offset = face.normal.clone().multiplyScalar(0.002);
       const positions: number[] = [];
 
       face.vertices.forEach((vertex, index) => {
@@ -144,6 +151,7 @@ export function Dodecahedron() {
         "position",
         new THREE.Float32BufferAttribute(positions, 3),
       );
+      outlineGeometry.attributes.position.needsUpdate = true;
       outlineGeometry.computeBoundingSphere();
     };
 
