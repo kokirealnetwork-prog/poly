@@ -9,8 +9,6 @@ type Face = {
   vertices: THREE.Vector3[];
 };
 
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
-
 function getFaces(geometry: THREE.BufferGeometry): Face[] {
   const position = geometry.getAttribute("position");
   const clusters: { normal: THREE.Vector3; vertices: THREE.Vector3[] }[] = [];
@@ -112,35 +110,41 @@ export function Dodecahedron() {
 
     const faces = getFaces(geometry);
     const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xff2f87 });
-    const outline = new THREE.Group();
-    const outlineEdges = Array.from({ length: 5 }, () => {
-      const edge = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.011, 0.011, 1, 8),
-        outlineMaterial,
-      );
-      outline.add(edge);
-      return edge;
-    });
+    const outlineGeometry = new THREE.BufferGeometry();
+    const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
     shape.add(outline);
 
     const showSelectedFace = (face: Face) => {
-      const offset = face.normal.clone().multiplyScalar(0.008);
+      const offset = face.normal.clone().multiplyScalar(0.006);
+      const positions: number[] = [];
 
-      outlineEdges.forEach((edge, index) => {
-        const start = face.vertices[index]
+      face.vertices.forEach((vertex, index) => {
+        const outerStart = vertex.clone().lerp(face.center, 0.008).add(offset);
+        const outerEnd = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.12)
+          .lerp(face.center, 0.008)
           .add(offset);
-        const end = face.vertices[(index + 1) % face.vertices.length]
+        const innerStart = vertex.clone().lerp(face.center, 0.13).add(offset);
+        const innerEnd = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.12)
+          .lerp(face.center, 0.13)
           .add(offset);
-        const direction = end.clone().sub(start);
 
-        edge.position.copy(start).add(end).multiplyScalar(0.5);
-        edge.scale.set(1, direction.length(), 1);
-        edge.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
+        positions.push(
+          ...outerStart.toArray(),
+          ...outerEnd.toArray(),
+          ...innerEnd.toArray(),
+          ...outerStart.toArray(),
+          ...innerEnd.toArray(),
+          ...innerStart.toArray(),
+        );
       });
+
+      outlineGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positions, 3),
+      );
+      outlineGeometry.computeBoundingSphere();
     };
 
     let selectedFaceIndex = 0;
@@ -270,7 +274,7 @@ export function Dodecahedron() {
       edgeGeometry.dispose();
       material.dispose();
       edgeMaterial.dispose();
-      outlineEdges.forEach((edge) => edge.geometry.dispose());
+      outlineGeometry.dispose();
       outlineMaterial.dispose();
       renderer.dispose();
       renderer.domElement.remove();
