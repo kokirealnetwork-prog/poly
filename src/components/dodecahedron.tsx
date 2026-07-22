@@ -117,12 +117,16 @@ export function Dodecahedron() {
     shape.add(outline);
 
     const showSelectedFace = (face: Face) => {
-      const offset = face.normal.clone().multiplyScalar(0.035);
+      const offset = face.normal.clone().multiplyScalar(0.018);
 
       outlineEdges.forEach((edge, index) => {
-        const start = face.vertices[index].clone().add(offset);
+        const start = face.vertices[index]
+          .clone()
+          .lerp(face.center, 0.055)
+          .add(offset);
         const end = face.vertices[(index + 1) % face.vertices.length]
           .clone()
+          .lerp(face.center, 0.055)
           .add(offset);
         const direction = end.clone().sub(start);
 
