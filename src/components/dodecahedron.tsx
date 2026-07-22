@@ -65,6 +65,13 @@ export function Dodecahedron() {
     const container = containerRef.current;
     if (!container) return;
 
+    const pageBackground =
+      "radial-gradient(circle at 25% 15%, rgb(237 231 255 / 65%), transparent 42%), linear-gradient(145deg, #fff 0%, #faf8ff 55%, #fff 100%)";
+    const previousBodyBackground = document.body.style.background;
+    const previousRootBackground = document.documentElement.style.background;
+    document.body.style.background = pageBackground;
+    document.documentElement.style.background = pageBackground;
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
     camera.position.set(0, 0, 8);
@@ -253,6 +260,8 @@ export function Dodecahedron() {
     return () => {
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
+      document.body.style.background = previousBodyBackground;
+      document.documentElement.style.background = previousRootBackground;
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", stopDragging);
