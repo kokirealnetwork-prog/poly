@@ -108,7 +108,7 @@ export function Dodecahedron() {
     const outline = new THREE.Group();
     const outlineEdges = Array.from({ length: 5 }, () => {
       const edge = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.026, 0.026, 1, 8),
+        new THREE.CylinderGeometry(0.014, 0.014, 1, 8),
         outlineMaterial,
       );
       outline.add(edge);
