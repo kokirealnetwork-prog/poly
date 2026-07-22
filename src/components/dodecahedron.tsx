@@ -126,15 +126,15 @@ export function Dodecahedron() {
       const positions: number[] = [];
 
       face.vertices.forEach((vertex, index) => {
-        const outerStart = vertex.clone().lerp(face.center, 0.008).add(offset);
+        const outerStart = vertex.clone().lerp(face.center, 0.08).add(offset);
         const outerEnd = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.008)
+          .lerp(face.center, 0.08)
           .add(offset);
-        const innerStart = vertex.clone().lerp(face.center, 0.13).add(offset);
+        const innerStart = vertex.clone().lerp(face.center, 0.2).add(offset);
         const innerEnd = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.13)
+          .lerp(face.center, 0.2)
           .add(offset);
 
         positions.push(
