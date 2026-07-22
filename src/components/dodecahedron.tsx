@@ -115,7 +115,7 @@ export function Dodecahedron() {
     const outline = new THREE.Group();
     const outlineEdges = Array.from({ length: 5 }, () => {
       const edge = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.014, 0.014, 1, 8),
+        new THREE.CylinderGeometry(0.011, 0.011, 1, 8),
         outlineMaterial,
       );
       outline.add(edge);
@@ -124,16 +124,16 @@ export function Dodecahedron() {
     shape.add(outline);
 
     const showSelectedFace = (face: Face) => {
-      const offset = face.normal.clone().multiplyScalar(0.018);
+      const offset = face.normal.clone().multiplyScalar(0.008);
 
       outlineEdges.forEach((edge, index) => {
         const start = face.vertices[index]
           .clone()
-          .lerp(face.center, 0.055)
+          .lerp(face.center, 0.12)
           .add(offset);
         const end = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.055)
+          .lerp(face.center, 0.12)
           .add(offset);
         const direction = end.clone().sub(start);
 
