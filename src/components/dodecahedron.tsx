@@ -201,20 +201,45 @@ export function Dodecahedron() {
       if (audioContext?.state === "suspended") audioContext.resume();
     };
 
+    let tapNoiseBuffer: AudioBuffer | null = null;
+    const getTapNoiseBuffer = (context: AudioContext) => {
+      if (!tapNoiseBuffer) {
+        const length = Math.ceil(context.sampleRate * 0.03);
+        tapNoiseBuffer = context.createBuffer(1, length, context.sampleRate);
+        const data = tapNoiseBuffer.getChannelData(0);
+        for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
+      }
+      return tapNoiseBuffer;
+    };
+
     const playClick = () => {
       if (!audioContext) return;
       const start = audioContext.currentTime;
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      oscillator.type = "square";
-      oscillator.frequency.setValueAtTime(1750, start);
-      oscillator.frequency.exponentialRampToValueAtTime(780, start + 0.018);
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.3, start + 0.001);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.03);
-      oscillator.connect(gain).connect(audioContext.destination);
-      oscillator.start(start);
-      oscillator.stop(start + 0.04);
+
+      const thump = audioContext.createOscillator();
+      thump.type = "sine";
+      thump.frequency.setValueAtTime(210, start);
+      thump.frequency.exponentialRampToValueAtTime(85, start + 0.055);
+      const thumpGain = audioContext.createGain();
+      thumpGain.gain.setValueAtTime(0.0001, start);
+      thumpGain.gain.exponentialRampToValueAtTime(0.55, start + 0.001);
+      thumpGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.09);
+      thump.connect(thumpGain).connect(audioContext.destination);
+      thump.start(start);
+      thump.stop(start + 0.1);
+
+      const tap = audioContext.createBufferSource();
+      tap.buffer = getTapNoiseBuffer(audioContext);
+      const tapFilter = audioContext.createBiquadFilter();
+      tapFilter.type = "lowpass";
+      tapFilter.frequency.setValueAtTime(2600, start);
+      const tapGain = audioContext.createGain();
+      tapGain.gain.setValueAtTime(0.0001, start);
+      tapGain.gain.exponentialRampToValueAtTime(0.4, start + 0.0008);
+      tapGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.02);
+      tap.connect(tapFilter).connect(tapGain).connect(audioContext.destination);
+      tap.start(start);
+      tap.stop(start + 0.03);
     };
 
     let dragging = false;
