@@ -176,6 +176,11 @@ export function Dodecahedron() {
         if (notify) {
           navigator.vibrate?.(18);
           playClick();
+          if (!dragging) {
+            velocityX = 0;
+            velocityY = 0;
+            beginSnap();
+          }
         }
       }
     };
