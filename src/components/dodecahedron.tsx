@@ -126,15 +126,15 @@ export function Dodecahedron() {
       const positions: number[] = [];
 
       face.vertices.forEach((vertex, index) => {
-        const outerStart = vertex.clone().lerp(face.center, 0.08).add(offset);
+        const outerStart = vertex.clone().lerp(face.center, 0.045).add(offset);
         const outerEnd = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.08)
+          .lerp(face.center, 0.045)
           .add(offset);
-        const innerStart = vertex.clone().lerp(face.center, 0.2).add(offset);
+        const innerStart = vertex.clone().lerp(face.center, 0.16).add(offset);
         const innerEnd = face.vertices[(index + 1) % face.vertices.length]
           .clone()
-          .lerp(face.center, 0.2)
+          .lerp(face.center, 0.16)
           .add(offset);
 
         positions.push(
@@ -156,7 +156,7 @@ export function Dodecahedron() {
     };
 
     let selectedFaceIndex = 0;
-    const updateSelectedFace = (vibrate = true) => {
+    const updateSelectedFace = (notify = true) => {
       shape.updateMatrixWorld();
       let nearestDistance = Number.POSITIVE_INFINITY;
       let nearestIndex = selectedFaceIndex;
@@ -173,7 +173,10 @@ export function Dodecahedron() {
       if (nearestIndex !== selectedFaceIndex) {
         selectedFaceIndex = nearestIndex;
         showSelectedFace(faces[selectedFaceIndex]);
-        if (vibrate) navigator.vibrate?.(18);
+        if (notify) {
+          navigator.vibrate?.(18);
+          playClick();
+        }
       }
     };
     updateSelectedFace(false);
@@ -199,33 +202,20 @@ export function Dodecahedron() {
       if (audioContext?.state === "suspended") audioContext.resume();
     };
 
-    const playClick = (delay: number) => {
+    const playClick = () => {
       if (!audioContext) return;
-      const start = audioContext.currentTime + delay;
+      const start = audioContext.currentTime;
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
       oscillator.type = "square";
       oscillator.frequency.setValueAtTime(1750, start);
       oscillator.frequency.exponentialRampToValueAtTime(780, start + 0.018);
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.22, start + 0.001);
+      gain.gain.exponentialRampToValueAtTime(0.3, start + 0.001);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.03);
       oscillator.connect(gain).connect(audioContext.destination);
       oscillator.start(start);
       oscillator.stop(start + 0.04);
-    };
-
-    const CLICK_STEP = 0.16;
-    let clickAccumulator = 0;
-    const accrueClicks = (stepRadians: number) => {
-      clickAccumulator += Math.abs(stepRadians);
-      let played = 0;
-      while (clickAccumulator >= CLICK_STEP && played < 6) {
-        clickAccumulator -= CLICK_STEP;
-        playClick(played * 0.025);
-        played += 1;
-      }
-      if (clickAccumulator >= CLICK_STEP) clickAccumulator %= CLICK_STEP;
     };
 
     let dragging = false;
@@ -244,7 +234,6 @@ export function Dodecahedron() {
         velocityY * 0.009,
       );
       shape.quaternion.premultiply(horizontal).premultiply(vertical);
-      accrueClicks(Math.hypot(velocityX, velocityY) * 0.009);
     };
 
     const onPointerDown = (event: PointerEvent) => {
