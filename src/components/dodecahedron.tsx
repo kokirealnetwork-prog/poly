@@ -218,21 +218,33 @@ export function Dodecahedron() {
 
       const thump = audioContext.createOscillator();
       thump.type = "sine";
-      thump.frequency.setValueAtTime(220, start);
-      thump.frequency.exponentialRampToValueAtTime(80, start + 0.06);
+      thump.frequency.setValueAtTime(300, start);
+      thump.frequency.exponentialRampToValueAtTime(120, start + 0.06);
       const thumpGain = audioContext.createGain();
       thumpGain.gain.setValueAtTime(0.0001, start);
-      thumpGain.gain.exponentialRampToValueAtTime(0.6, start + 0.0008);
+      thumpGain.gain.exponentialRampToValueAtTime(0.55, start + 0.0008);
       thumpGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.1);
       thump.connect(thumpGain).connect(audioContext.destination);
       thump.start(start);
       thump.stop(start + 0.11);
 
+      const mid = audioContext.createOscillator();
+      mid.type = "triangle";
+      mid.frequency.setValueAtTime(1050, start);
+      mid.frequency.exponentialRampToValueAtTime(560, start + 0.025);
+      const midGain = audioContext.createGain();
+      midGain.gain.setValueAtTime(0.0001, start);
+      midGain.gain.exponentialRampToValueAtTime(0.55, start + 0.0006);
+      midGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.03);
+      mid.connect(midGain).connect(audioContext.destination);
+      mid.start(start);
+      mid.stop(start + 0.032);
+
       const crack = audioContext.createBufferSource();
       crack.buffer = getTapNoiseBuffer(audioContext);
       const crackFilter = audioContext.createBiquadFilter();
       crackFilter.type = "highpass";
-      crackFilter.frequency.setValueAtTime(2800, start);
+      crackFilter.frequency.setValueAtTime(3200, start);
       const crackGain = audioContext.createGain();
       crackGain.gain.setValueAtTime(0.0001, start);
       crackGain.gain.exponentialRampToValueAtTime(0.5, start + 0.0004);
@@ -243,8 +255,8 @@ export function Dodecahedron() {
 
       const tick = audioContext.createOscillator();
       tick.type = "triangle";
-      tick.frequency.setValueAtTime(3400, start);
-      tick.frequency.exponentialRampToValueAtTime(2200, start + 0.01);
+      tick.frequency.setValueAtTime(4200, start);
+      tick.frequency.exponentialRampToValueAtTime(2800, start + 0.01);
       const tickGain = audioContext.createGain();
       tickGain.gain.setValueAtTime(0.0001, start);
       tickGain.gain.exponentialRampToValueAtTime(0.35, start + 0.0004);
