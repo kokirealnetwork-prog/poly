@@ -187,11 +187,65 @@ export function Dodecahedron() {
     rimLight.position.set(5, -2, -3);
     scene.add(rimLight);
 
+    let audioContext: AudioContext | null = null;
+    const ensureAudio = () => {
+      if (!audioContext) {
+        const AudioCtor =
+          window.AudioContext ??
+          (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+            .webkitAudioContext;
+        if (AudioCtor) audioContext = new AudioCtor();
+      }
+      if (audioContext?.state === "suspended") audioContext.resume();
+    };
+
+    const playClick = (delay: number) => {
+      if (!audioContext) return;
+      const start = audioContext.currentTime + delay;
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(1750, start);
+      oscillator.frequency.exponentialRampToValueAtTime(780, start + 0.018);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.22, start + 0.001);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.03);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.04);
+    };
+
+    const CLICK_STEP = 0.16;
+    let clickAccumulator = 0;
+    const accrueClicks = (stepRadians: number) => {
+      clickAccumulator += Math.abs(stepRadians);
+      let played = 0;
+      while (clickAccumulator >= CLICK_STEP && played < 6) {
+        clickAccumulator -= CLICK_STEP;
+        playClick(played * 0.025);
+        played += 1;
+      }
+      if (clickAccumulator >= CLICK_STEP) clickAccumulator %= CLICK_STEP;
+    };
+
     let dragging = false;
     let previousX = 0;
     let previousY = 0;
     let velocityX = 0;
     let velocityY = 0;
+
+    const applyRotation = () => {
+      const horizontal = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        velocityX * 0.009,
+      );
+      const vertical = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(1, 0, 0),
+        velocityY * 0.009,
+      );
+      shape.quaternion.premultiply(horizontal).premultiply(vertical);
+      accrueClicks(Math.hypot(velocityX, velocityY) * 0.009);
+    };
 
     const onPointerDown = (event: PointerEvent) => {
       dragging = true;
@@ -199,6 +253,7 @@ export function Dodecahedron() {
       previousY = event.clientY;
       velocityX = 0;
       velocityY = 0;
+      ensureAudio();
       renderer.domElement.setPointerCapture(event.pointerId);
       renderer.domElement.classList.add("is-dragging");
     };
@@ -211,15 +266,7 @@ export function Dodecahedron() {
       previousX = event.clientX;
       previousY = event.clientY;
 
-      const horizontal = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        velocityX * 0.009,
-      );
-      const vertical = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(1, 0, 0),
-        velocityY * 0.009,
-      );
-      shape.quaternion.premultiply(horizontal).premultiply(vertical);
+      applyRotation();
     };
 
     const stopDragging = (event: PointerEvent) => {
@@ -250,15 +297,7 @@ export function Dodecahedron() {
     let animationFrame = 0;
     const animate = () => {
       if (!dragging && Math.abs(velocityX) + Math.abs(velocityY) > 0.02) {
-        const horizontal = new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(0, 1, 0),
-          velocityX * 0.009,
-        );
-        const vertical = new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(1, 0, 0),
-          velocityY * 0.009,
-        );
-        shape.quaternion.premultiply(horizontal).premultiply(vertical);
+        applyRotation();
         velocityX *= 0.94;
         velocityY *= 0.94;
       }
@@ -284,6 +323,7 @@ export function Dodecahedron() {
       edgeMaterial.dispose();
       outlineGeometry.dispose();
       outlineMaterial.dispose();
+      audioContext?.close();
       renderer.dispose();
       renderer.domElement.remove();
     };
