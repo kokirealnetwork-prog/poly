@@ -110,6 +110,33 @@ export function Dodecahedron() {
 
     const cameraDirection = camera.position.clone().normalize();
     const faces = getFaces(geometry);
+
+    const trianglePosition = geometry.getAttribute("position");
+    const triangleFaceIndex: number[] = [];
+    for (let index = 0; index < trianglePosition.count; index += 3) {
+      const a = new THREE.Vector3().fromBufferAttribute(trianglePosition, index);
+      const b = new THREE.Vector3().fromBufferAttribute(trianglePosition, index + 1);
+      const c = new THREE.Vector3().fromBufferAttribute(trianglePosition, index + 2);
+      const normal = new THREE.Vector3()
+        .crossVectors(b.clone().sub(a), c.clone().sub(a))
+        .normalize();
+      const faceIndex = faces.findIndex((face) => face.normal.dot(normal) > 0.999);
+      triangleFaceIndex.push(faceIndex);
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const pointerNdc = new THREE.Vector2();
+    const pickFaceAt = (clientX: number, clientY: number): number | null => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointerNdc, camera);
+      const hits = raycaster.intersectObject(solid, false);
+      if (hits.length === 0 || hits[0].faceIndex === undefined) return null;
+      const faceIndex = triangleFaceIndex[hits[0].faceIndex];
+      return faceIndex === undefined || faceIndex === -1 ? null : faceIndex;
+    };
+
     const outlineMaterial = new THREE.MeshBasicMaterial({
       color: 0xc73c93,
       depthTest: false,
@@ -176,7 +203,7 @@ export function Dodecahedron() {
         if (notify) {
           navigator.vibrate?.(18);
           playClick();
-          if (!dragging) {
+          if (!dragging && Math.abs(velocityX) + Math.abs(velocityY) < SOFT_INTERRUPT_SPEED) {
             velocityX = 0;
             velocityY = 0;
             beginSnap();
@@ -192,6 +219,9 @@ export function Dodecahedron() {
     const snapTo = new THREE.Quaternion();
     let snapStartTime = 0;
     const SNAP_DURATION_MS = 240;
+    const SOFT_INTERRUPT_SPEED = 0.6;
+    const MAX_SPIN_MS = 900;
+    let spinStartTime = 0;
 
     const beginSnap = () => {
       const face = faces[selectedFaceIndex];
@@ -318,6 +348,11 @@ export function Dodecahedron() {
     let previousY = 0;
     let velocityX = 0;
     let velocityY = 0;
+    let pointerDownX = 0;
+    let pointerDownY = 0;
+    let pointerDownTime = 0;
+    const TAP_MAX_MOVEMENT = 6;
+    const TAP_MAX_DURATION_MS = 350;
 
     const applyRotation = () => {
       const horizontal = new THREE.Quaternion().setFromAxisAngle(
@@ -334,8 +369,12 @@ export function Dodecahedron() {
     const onPointerDown = (event: PointerEvent) => {
       dragging = true;
       snapping = false;
+      spinStartTime = 0;
       previousX = event.clientX;
       previousY = event.clientY;
+      pointerDownX = event.clientX;
+      pointerDownY = event.clientY;
+      pointerDownTime = performance.now();
       velocityX = 0;
       velocityY = 0;
       ensureAudio();
@@ -361,6 +400,28 @@ export function Dodecahedron() {
         renderer.domElement.releasePointerCapture(event.pointerId);
       }
       renderer.domElement.classList.remove("is-dragging");
+
+      const movedDistance = Math.hypot(
+        event.clientX - pointerDownX,
+        event.clientY - pointerDownY,
+      );
+      const heldDuration = performance.now() - pointerDownTime;
+      const isTap = movedDistance < TAP_MAX_MOVEMENT && heldDuration < TAP_MAX_DURATION_MS;
+
+      if (isTap) {
+        velocityX = 0;
+        velocityY = 0;
+        const tappedFaceIndex = pickFaceAt(event.clientX, event.clientY);
+        if (tappedFaceIndex !== null && tappedFaceIndex !== selectedFaceIndex) {
+          selectedFaceIndex = tappedFaceIndex;
+          showSelectedFace(faces[selectedFaceIndex]);
+          navigator.vibrate?.(18);
+          playClick();
+        }
+        beginSnap();
+      } else if (Math.abs(velocityX) + Math.abs(velocityY) > 0.02) {
+        spinStartTime = performance.now();
+      }
     };
 
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
@@ -384,10 +445,17 @@ export function Dodecahedron() {
       if (dragging) {
         snapping = false;
       } else if (Math.abs(velocityX) + Math.abs(velocityY) > 0.02) {
-        applyRotation();
-        velocityX *= 0.94;
-        velocityY *= 0.94;
-        snapping = false;
+        if (spinStartTime && performance.now() - spinStartTime > MAX_SPIN_MS) {
+          velocityX = 0;
+          velocityY = 0;
+          spinStartTime = 0;
+          beginSnap();
+        } else {
+          applyRotation();
+          velocityX *= 0.94;
+          velocityY *= 0.94;
+          snapping = false;
+        }
       } else if (snapping) {
         const elapsed = performance.now() - snapStartTime;
         const t = Math.min(elapsed / SNAP_DURATION_MS, 1);
