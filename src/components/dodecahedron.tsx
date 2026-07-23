@@ -218,28 +218,40 @@ export function Dodecahedron() {
 
       const thump = audioContext.createOscillator();
       thump.type = "sine";
-      thump.frequency.setValueAtTime(210, start);
-      thump.frequency.exponentialRampToValueAtTime(85, start + 0.055);
+      thump.frequency.setValueAtTime(220, start);
+      thump.frequency.exponentialRampToValueAtTime(80, start + 0.06);
       const thumpGain = audioContext.createGain();
       thumpGain.gain.setValueAtTime(0.0001, start);
-      thumpGain.gain.exponentialRampToValueAtTime(0.55, start + 0.001);
-      thumpGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.09);
+      thumpGain.gain.exponentialRampToValueAtTime(0.6, start + 0.0008);
+      thumpGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.1);
       thump.connect(thumpGain).connect(audioContext.destination);
       thump.start(start);
-      thump.stop(start + 0.1);
+      thump.stop(start + 0.11);
 
-      const tap = audioContext.createBufferSource();
-      tap.buffer = getTapNoiseBuffer(audioContext);
-      const tapFilter = audioContext.createBiquadFilter();
-      tapFilter.type = "lowpass";
-      tapFilter.frequency.setValueAtTime(2600, start);
-      const tapGain = audioContext.createGain();
-      tapGain.gain.setValueAtTime(0.0001, start);
-      tapGain.gain.exponentialRampToValueAtTime(0.4, start + 0.0008);
-      tapGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.02);
-      tap.connect(tapFilter).connect(tapGain).connect(audioContext.destination);
-      tap.start(start);
-      tap.stop(start + 0.03);
+      const crack = audioContext.createBufferSource();
+      crack.buffer = getTapNoiseBuffer(audioContext);
+      const crackFilter = audioContext.createBiquadFilter();
+      crackFilter.type = "highpass";
+      crackFilter.frequency.setValueAtTime(2800, start);
+      const crackGain = audioContext.createGain();
+      crackGain.gain.setValueAtTime(0.0001, start);
+      crackGain.gain.exponentialRampToValueAtTime(0.5, start + 0.0004);
+      crackGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.012);
+      crack.connect(crackFilter).connect(crackGain).connect(audioContext.destination);
+      crack.start(start);
+      crack.stop(start + 0.015);
+
+      const tick = audioContext.createOscillator();
+      tick.type = "triangle";
+      tick.frequency.setValueAtTime(3400, start);
+      tick.frequency.exponentialRampToValueAtTime(2200, start + 0.01);
+      const tickGain = audioContext.createGain();
+      tickGain.gain.setValueAtTime(0.0001, start);
+      tickGain.gain.exponentialRampToValueAtTime(0.35, start + 0.0004);
+      tickGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.014);
+      tick.connect(tickGain).connect(audioContext.destination);
+      tick.start(start);
+      tick.stop(start + 0.016);
     };
 
     let dragging = false;
