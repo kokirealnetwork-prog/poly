@@ -222,7 +222,7 @@ export function Dodecahedron() {
       thump.frequency.exponentialRampToValueAtTime(120, start + 0.06);
       const thumpGain = audioContext.createGain();
       thumpGain.gain.setValueAtTime(0.0001, start);
-      thumpGain.gain.exponentialRampToValueAtTime(0.55, start + 0.0008);
+      thumpGain.gain.exponentialRampToValueAtTime(0.34, start + 0.0008);
       thumpGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.1);
       thump.connect(thumpGain).connect(audioContext.destination);
       thump.start(start);
@@ -234,7 +234,7 @@ export function Dodecahedron() {
       mid.frequency.exponentialRampToValueAtTime(560, start + 0.025);
       const midGain = audioContext.createGain();
       midGain.gain.setValueAtTime(0.0001, start);
-      midGain.gain.exponentialRampToValueAtTime(0.55, start + 0.0006);
+      midGain.gain.exponentialRampToValueAtTime(0.32, start + 0.0006);
       midGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.03);
       mid.connect(midGain).connect(audioContext.destination);
       mid.start(start);
@@ -244,10 +244,10 @@ export function Dodecahedron() {
       crack.buffer = getTapNoiseBuffer(audioContext);
       const crackFilter = audioContext.createBiquadFilter();
       crackFilter.type = "highpass";
-      crackFilter.frequency.setValueAtTime(3200, start);
+      crackFilter.frequency.setValueAtTime(3600, start);
       const crackGain = audioContext.createGain();
       crackGain.gain.setValueAtTime(0.0001, start);
-      crackGain.gain.exponentialRampToValueAtTime(0.5, start + 0.0004);
+      crackGain.gain.exponentialRampToValueAtTime(0.32, start + 0.0004);
       crackGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.012);
       crack.connect(crackFilter).connect(crackGain).connect(audioContext.destination);
       crack.start(start);
@@ -255,11 +255,11 @@ export function Dodecahedron() {
 
       const tick = audioContext.createOscillator();
       tick.type = "triangle";
-      tick.frequency.setValueAtTime(4200, start);
-      tick.frequency.exponentialRampToValueAtTime(2800, start + 0.01);
+      tick.frequency.setValueAtTime(4600, start);
+      tick.frequency.exponentialRampToValueAtTime(3000, start + 0.01);
       const tickGain = audioContext.createGain();
       tickGain.gain.setValueAtTime(0.0001, start);
-      tickGain.gain.exponentialRampToValueAtTime(0.35, start + 0.0004);
+      tickGain.gain.exponentialRampToValueAtTime(0.32, start + 0.0004);
       tickGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.014);
       tick.connect(tickGain).connect(audioContext.destination);
       tick.start(start);
@@ -267,10 +267,10 @@ export function Dodecahedron() {
 
       const toneGain = audioContext.createGain();
       toneGain.gain.setValueAtTime(0.0001, start);
-      toneGain.gain.exponentialRampToValueAtTime(0.2, start + 0.003);
+      toneGain.gain.exponentialRampToValueAtTime(0.13, start + 0.003);
       toneGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.075);
       toneGain.connect(audioContext.destination);
-      [1480, 2220, 3700].forEach((frequency, index) => {
+      [1480, 2220, 3700, 5300].forEach((frequency, index) => {
         const partial = audioContext!.createOscillator();
         partial.type = "sine";
         partial.frequency.setValueAtTime(frequency, start);
