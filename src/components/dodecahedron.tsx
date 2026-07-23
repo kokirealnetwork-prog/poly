@@ -108,6 +108,7 @@ export function Dodecahedron() {
     shape.rotation.set(-0.28, 0.5, 0.08);
     scene.add(shape);
 
+    const cameraDirection = camera.position.clone().normalize();
     const faces = getFaces(geometry);
     const outlineMaterial = new THREE.MeshBasicMaterial({
       color: 0xc73c93,
@@ -180,6 +181,31 @@ export function Dodecahedron() {
     };
     updateSelectedFace(false);
     showSelectedFace(faces[selectedFaceIndex]);
+
+    let snapping = false;
+    const snapFrom = new THREE.Quaternion();
+    const snapTo = new THREE.Quaternion();
+    let snapStartTime = 0;
+    const SNAP_DURATION_MS = 240;
+
+    const beginSnap = () => {
+      const face = faces[selectedFaceIndex];
+      const currentNormal = face.normal
+        .clone()
+        .applyQuaternion(shape.quaternion)
+        .normalize();
+      const angle = currentNormal.angleTo(cameraDirection);
+      if (angle < 0.01) return;
+
+      const delta = new THREE.Quaternion().setFromUnitVectors(
+        currentNormal,
+        cameraDirection,
+      );
+      snapFrom.copy(shape.quaternion);
+      snapTo.copy(delta).multiply(shape.quaternion);
+      snapStartTime = performance.now();
+      snapping = true;
+    };
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x5b674b, 2.1));
     const keyLight = new THREE.DirectionalLight(0xffffff, 4.2);
@@ -302,6 +328,7 @@ export function Dodecahedron() {
 
     const onPointerDown = (event: PointerEvent) => {
       dragging = true;
+      snapping = false;
       previousX = event.clientX;
       previousY = event.clientY;
       velocityX = 0;
@@ -349,10 +376,21 @@ export function Dodecahedron() {
 
     let animationFrame = 0;
     const animate = () => {
-      if (!dragging && Math.abs(velocityX) + Math.abs(velocityY) > 0.02) {
+      if (dragging) {
+        snapping = false;
+      } else if (Math.abs(velocityX) + Math.abs(velocityY) > 0.02) {
         applyRotation();
         velocityX *= 0.94;
         velocityY *= 0.94;
+        snapping = false;
+      } else if (snapping) {
+        const elapsed = performance.now() - snapStartTime;
+        const t = Math.min(elapsed / SNAP_DURATION_MS, 1);
+        const eased = 1 - (1 - t) ** 3;
+        shape.quaternion.copy(snapFrom).slerp(snapTo, eased);
+        if (t >= 1) snapping = false;
+      } else {
+        beginSnap();
       }
 
       updateSelectedFace();
