@@ -264,6 +264,22 @@ export function Dodecahedron() {
       tick.connect(tickGain).connect(audioContext.destination);
       tick.start(start);
       tick.stop(start + 0.016);
+
+      const toneGain = audioContext.createGain();
+      toneGain.gain.setValueAtTime(0.0001, start);
+      toneGain.gain.exponentialRampToValueAtTime(0.2, start + 0.003);
+      toneGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.075);
+      toneGain.connect(audioContext.destination);
+      [1480, 2220, 3700].forEach((frequency, index) => {
+        const partial = audioContext!.createOscillator();
+        partial.type = "sine";
+        partial.frequency.setValueAtTime(frequency, start);
+        const partialGain = audioContext!.createGain();
+        partialGain.gain.value = index === 0 ? 1 : 0.4 / (index + 1);
+        partial.connect(partialGain).connect(toneGain);
+        partial.start(start);
+        partial.stop(start + 0.08);
+      });
     };
 
     let dragging = false;
