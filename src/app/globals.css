@@ -93,6 +93,18 @@ button {
   display: grid;
   place-items: center;
   min-height: 0;
+  width: 100%;
+}
+
+.player-stage .cd-disc {
+  width: min(78vw, 340px);
+  height: min(78vw, 340px);
+  max-height: 46svh;
+  background: transparent;
+}
+
+.player-stage .cd-disc canvas {
+  background: transparent;
 }
 
 .diamond-wrap {

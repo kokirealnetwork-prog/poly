@@ -1,4 +1,6 @@
-import { JacketCover } from "@/components/jacket-cover";
+"use client";
+
+import { CdDisc } from "@/components/cd-disc";
 
 export default function Home() {
   return (
@@ -10,7 +12,7 @@ export default function Home() {
         </header>
 
         <div className="player-stage">
-          <JacketCover />
+          <CdDisc initialView="jacket" jacketOnly />
         </div>
 
         <div className="player-meta">

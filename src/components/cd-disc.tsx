@@ -17,6 +17,8 @@ type ViewMode = "jacket" | "disc";
 type CdDiscProps = {
   onViewChange?: (view: ViewMode) => void;
   initialView?: ViewMode;
+  /** Keep the jewel-case jacket only — drag to rotate, no view switch. */
+  jacketOnly?: boolean;
 };
 
 function cssFont(cssVar: string, fallback: string) {
@@ -508,10 +510,15 @@ function createJewelCase(
   return { caseRoot, lid, disposables };
 }
 
-export function CdDisc({ onViewChange, initialView = "jacket" }: CdDiscProps) {
+export function CdDisc({
+  onViewChange,
+  initialView = "jacket",
+  jacketOnly = false,
+}: CdDiscProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onViewChangeRef = useRef(onViewChange);
   const initialViewRef = useRef(initialView);
+  const jacketOnlyRef = useRef(jacketOnly);
 
   useEffect(() => {
     onViewChangeRef.current = onViewChange;
@@ -536,6 +543,7 @@ export function CdDisc({ onViewChange, initialView = "jacket" }: CdDiscProps) {
         containerRef.current,
         onViewChangeRef,
         initialViewRef.current,
+        jacketOnlyRef.current,
       );
       if (disposed) {
         cleanupScene();
@@ -556,7 +564,7 @@ export function CdDisc({ onViewChange, initialView = "jacket" }: CdDiscProps) {
       ref={containerRef}
       className="cd-disc"
       role="img"
-      aria-label="Tap the jacket to reveal the CD. Drag to rotate."
+      aria-label="Drag to rotate the album jacket"
     />
   );
 }
@@ -565,12 +573,13 @@ function mountScene(
   container: HTMLDivElement,
   onViewChangeRef: { current?: (view: ViewMode) => void },
   initialView: ViewMode = "jacket",
+  jacketOnly = false,
 ) {
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
+    scene.background = new THREE.Color(0xf2f2f4);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-    camera.position.set(0, 0.2, 7.2);
+    camera.position.set(0, 0.15, 5.4);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -578,7 +587,7 @@ function mountScene(
       antialias: true,
       powerPreference: "high-performance",
     });
-    renderer.setClearColor(0xffffff, 1);
+    renderer.setClearColor(0xf2f2f4, 1);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     // Keep pure white — filmic tone mapping can muddy the clear color.
@@ -593,7 +602,7 @@ function mountScene(
     const dataTexture = createDataSideTexture();
 
     const root = new THREE.Group();
-    root.rotation.set(-0.12, 0.28, 0.02);
+    root.rotation.set(-0.18, 0.55, 0.08);
     scene.add(root);
 
     const { caseRoot, lid, disposables: caseDisposables } = createJewelCase(
@@ -786,7 +795,7 @@ function mountScene(
       const isTap =
         movedDistance < TAP_MAX_MOVEMENT && heldDuration < TAP_MAX_DURATION_MS;
 
-      if (isTap && !transitioning) {
+      if (isTap && !transitioning && !jacketOnly) {
         playPlasticTick();
         beginTransition(view === "jacket" ? "disc" : "jacket");
       }
