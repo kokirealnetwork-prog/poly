@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fdfcff;
-  --foreground: #17210c;
+  --background: #1a1f26;
+  --foreground: #f3ebe0;
+  --muted: #a8b0b8;
+  --accent: #d4a574;
+  --glow: #3a4a58;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-sans: var(--font-figtree), "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
 }
 
 * {
@@ -22,42 +25,190 @@ body {
   min-height: 100%;
   margin: 0;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 25% 15%, rgb(237 231 255 / 65%), transparent 42%),
-    linear-gradient(145deg, #ffffff 0%, #faf8ff 55%, #ffffff 100%);
+  background: var(--background);
   color: var(--foreground);
 }
 
 .stage {
+  position: relative;
   display: grid;
+  grid-template-rows: auto 1fr auto;
   width: 100vw;
   height: 100svh;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
   place-items: center;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, rgb(58 74 88 / 55%), transparent 70%),
+    radial-gradient(ellipse 90% 70% at 15% 0%, rgb(90 70 50 / 28%), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 90% 100%, rgb(40 55 65 / 45%), transparent 55%),
+    linear-gradient(165deg, #222830 0%, #15191f 45%, #0f1216 100%);
+  overflow: hidden;
 }
 
-.dodecahedron {
-  width: min(78vw, 680px);
-  height: min(78vw, 680px);
-  max-height: 82svh;
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.55;
+  animation: grain 8s steps(6) infinite;
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-1%, 1%);
+  }
+  50% {
+    transform: translate(1%, -1%);
+  }
+  75% {
+    transform: translate(-1%, -1%);
+  }
+}
+
+.brand {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 28rem;
+  animation: rise 0.9s ease-out both;
+}
+
+.brand-name {
+  margin: 0;
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(3.2rem, 12vw, 5.5rem);
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  line-height: 1;
+  color: var(--foreground);
+  text-indent: 0.28em;
+}
+
+.brand-line {
+  margin: 0.85rem 0 0;
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.15rem, 3.2vw, 1.55rem);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  color: var(--foreground);
+}
+
+.brand-support {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-figtree), "Figtree", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.disc-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  animation: float-in 1.1s 0.15s ease-out both;
+}
+
+.cd-disc {
+  width: min(82vw, 620px);
+  height: min(82vw, 520px);
+  max-height: min(58svh, 520px);
   outline: none;
   cursor: grab;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  animation: disc-settle 1.4s 0.2s ease-out both;
 }
 
-.dodecahedron canvas {
+.cd-disc canvas {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.dodecahedron canvas.is-dragging {
+.cd-disc canvas.is-dragging {
   cursor: grabbing;
 }
 
+.hint {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: var(--font-figtree), "Figtree", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(168 176 184 / 70%);
+  animation: rise 1s 0.35s ease-out both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes disc-settle {
+  from {
+    filter: blur(6px);
+    opacity: 0.4;
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 640px) {
-  .dodecahedron {
-    width: 92vw;
-    height: 92vw;
+  .stage {
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .brand-name {
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;
+  }
+
+  .cd-disc {
+    width: 96vw;
+    height: min(96vw, 48svh);
+    max-height: 48svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand,
+  .disc-stage,
+  .hint,
+  .cd-disc,
+  .stage::before {
+    animation: none;
   }
 }
