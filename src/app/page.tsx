@@ -16,34 +16,10 @@ export default function Home() {
         </div>
 
         <div className="player-meta">
-          <button type="button" className="player-chevron" aria-label="Previous">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-              <path
-                d="M14.5 5.5 8 12l6.5 6.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
           <div className="player-copy">
             <p className="player-title">Slow Bright</p>
             <p className="player-artist">OWN</p>
           </div>
-          <button type="button" className="player-chevron" aria-label="Next">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-              <path
-                d="M9.5 5.5 16 12l-6.5 6.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
         </div>
 
         <footer className="player-actions">
