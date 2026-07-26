@@ -87,37 +87,40 @@ function paintGrain(ctx: CanvasRenderingContext2D, w: number, h: number) {
 
 function paintWatercolorSky(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, "#b9dff2");
-  sky.addColorStop(0.28, "#d7eef9");
-  sky.addColorStop(0.62, "#f5fbfe");
-  sky.addColorStop(1, "#e8f3e4");
+  sky.addColorStop(0, "#6ec4ef");
+  sky.addColorStop(0.22, "#9ed7f5");
+  sky.addColorStop(0.5, "#d8f0fb");
+  sky.addColorStop(0.78, "#eef8e6");
+  sky.addColorStop(1, "#d4ecc8");
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
-  // Layered watercolor blooms for a softer, higher-detail wash
-  softBlob(ctx, w * 0.18, h * 0.16, w * 0.38, "rgba(150, 205, 235, 0.5)");
-  softBlob(ctx, w * 0.72, h * 0.1, w * 0.34, "rgba(175, 220, 245, 0.48)");
-  softBlob(ctx, w * 0.48, h * 0.22, w * 0.42, "rgba(255, 255, 255, 0.55)");
-  softBlob(ctx, w * 0.3, h * 0.34, w * 0.26, "rgba(200, 230, 245, 0.35)");
-  softBlob(ctx, w * 0.78, h * 0.4, w * 0.24, "rgba(255, 248, 220, 0.2)");
-  softBlob(ctx, w * 0.12, h * 0.58, w * 0.3, "rgba(185, 225, 205, 0.28)");
-  softBlob(ctx, w * 0.86, h * 0.66, w * 0.28, "rgba(255, 230, 175, 0.18)");
-  softBlob(ctx, w * 0.5, h * 0.8, w * 0.48, "rgba(205, 230, 195, 0.32)");
-  softBlob(ctx, w * 0.62, h * 0.5, w * 0.2, "rgba(255,255,255,0.4)");
+  // Richer watercolor blooms — higher chroma, still soft edges
+  softBlob(ctx, w * 0.18, h * 0.14, w * 0.4, "rgba(56, 168, 230, 0.55)");
+  softBlob(ctx, w * 0.74, h * 0.08, w * 0.36, "rgba(70, 185, 240, 0.5)");
+  softBlob(ctx, w * 0.48, h * 0.2, w * 0.4, "rgba(255, 255, 255, 0.45)");
+  softBlob(ctx, w * 0.28, h * 0.32, w * 0.28, "rgba(90, 195, 245, 0.4)");
+  softBlob(ctx, w * 0.8, h * 0.38, w * 0.26, "rgba(255, 220, 110, 0.35)");
+  softBlob(ctx, w * 0.1, h * 0.55, w * 0.32, "rgba(110, 210, 150, 0.4)");
+  softBlob(ctx, w * 0.88, h * 0.64, w * 0.3, "rgba(255, 196, 90, 0.28)");
+  softBlob(ctx, w * 0.5, h * 0.82, w * 0.5, "rgba(130, 205, 120, 0.42)");
+  softBlob(ctx, w * 0.62, h * 0.48, w * 0.22, "rgba(255,255,255,0.35)");
+  softBlob(ctx, w * 0.35, h * 0.6, w * 0.2, "rgba(80, 190, 220, 0.28)");
 
-  // Many small dabs = less “flat low-res” look
-  for (let i = 0; i < 40; i += 1) {
+  for (let i = 0; i < 48; i += 1) {
     const x = w * (0.08 + Math.random() * 0.84);
-    const y = h * (0.05 + Math.random() * 0.7);
+    const y = h * (0.05 + Math.random() * 0.72);
     const r = w * (0.03 + Math.random() * 0.08);
+    const pick = Math.random();
     const tone =
-      Math.random() > 0.5
-        ? `rgba(255,255,255,${0.08 + Math.random() * 0.12})`
-        : `rgba(160, 210, 235,${0.08 + Math.random() * 0.12})`;
+      pick > 0.66
+        ? `rgba(255,255,255,${0.1 + Math.random() * 0.14})`
+        : pick > 0.33
+          ? `rgba(40, 160, 230,${0.12 + Math.random() * 0.16})`
+          : `rgba(90, 200, 130,${0.1 + Math.random() * 0.14})`;
     softBlob(ctx, x, y, r, tone);
   }
 
-  // Path toward bright middle distance
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(w * 0.4, h * 0.94);
@@ -125,17 +128,16 @@ function paintWatercolorSky(ctx: CanvasRenderingContext2D, w: number, h: number)
   ctx.quadraticCurveTo(w * 0.53, h * 0.6, w * 0.6, h * 0.94);
   ctx.closePath();
   const pathGrad = ctx.createLinearGradient(0, h * 0.38, 0, h);
-  pathGrad.addColorStop(0, "rgba(255,255,255,0.12)");
-  pathGrad.addColorStop(1, "rgba(205, 195, 165, 0.32)");
+  pathGrad.addColorStop(0, "rgba(255,255,255,0.18)");
+  pathGrad.addColorStop(1, "rgba(220, 185, 110, 0.4)");
   ctx.fillStyle = pathGrad;
   ctx.fill();
   ctx.restore();
 
-  softBlob(ctx, w * 0.5, h * 0.36, w * 0.24, "rgba(255, 255, 255, 0.88)");
-  softBlob(ctx, w * 0.5, h * 0.34, w * 0.1, "rgba(255, 248, 210, 0.5)");
+  softBlob(ctx, w * 0.5, h * 0.34, w * 0.26, "rgba(255, 255, 255, 0.9)");
+  softBlob(ctx, w * 0.5, h * 0.32, w * 0.11, "rgba(255, 236, 140, 0.65)");
 
-  // Two small figures — original composition, not a copy
-  ctx.fillStyle = "rgba(75, 95, 115, 0.4)";
+  ctx.fillStyle = "rgba(45, 85, 120, 0.5)";
   const drawFigure = (fx: number, fy: number, scale: number) => {
     ctx.beginPath();
     ctx.ellipse(fx, fy - scale * 7, scale * 2.1, scale * 2.3, 0, 0, Math.PI * 2);
@@ -222,9 +224,9 @@ function createSpineTexture() {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     const grad = ctx.createLinearGradient(0, 0, 0, TEXTURE_SIZE);
-    grad.addColorStop(0, "#b9dff2");
-    grad.addColorStop(0.5, "#e8f5fb");
-    grad.addColorStop(1, "#dcefdc");
+    grad.addColorStop(0, "#6ec4ef");
+    grad.addColorStop(0.5, "#c8ebf8");
+    grad.addColorStop(1, "#d4ecc8");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, TEXTURE_SIZE);
     ctx.save();
@@ -284,9 +286,9 @@ function createDataSideTexture() {
       size / 2,
       size * 0.5,
     );
-    base.addColorStop(0, "#d8e8f2");
-    base.addColorStop(0.5, "#9bb8c8");
-    base.addColorStop(1, "#6a8494");
+    base.addColorStop(0, "#c5e8f8");
+    base.addColorStop(0.45, "#6eb4d4");
+    base.addColorStop(1, "#3d7a98");
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, size, size);
 
