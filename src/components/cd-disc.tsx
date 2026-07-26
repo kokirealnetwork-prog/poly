@@ -16,6 +16,7 @@ type ViewMode = "jacket" | "disc";
 
 type CdDiscProps = {
   onViewChange?: (view: ViewMode) => void;
+  initialView?: ViewMode;
 };
 
 function cssFont(cssVar: string, fallback: string) {
@@ -507,9 +508,10 @@ function createJewelCase(
   return { caseRoot, lid, disposables };
 }
 
-export function CdDisc({ onViewChange }: CdDiscProps) {
+export function CdDisc({ onViewChange, initialView = "jacket" }: CdDiscProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onViewChangeRef = useRef(onViewChange);
+  const initialViewRef = useRef(initialView);
 
   useEffect(() => {
     onViewChangeRef.current = onViewChange;
@@ -530,7 +532,11 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       }
       if (disposed || !containerRef.current) return;
 
-      cleanupScene = mountScene(containerRef.current, onViewChangeRef);
+      cleanupScene = mountScene(
+        containerRef.current,
+        onViewChangeRef,
+        initialViewRef.current,
+      );
       if (disposed) {
         cleanupScene();
         cleanupScene = undefined;
@@ -558,6 +564,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
 function mountScene(
   container: HTMLDivElement,
   onViewChangeRef: { current?: (view: ViewMode) => void },
+  initialView: ViewMode = "jacket",
 ) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
@@ -603,8 +610,14 @@ function mountScene(
     caseRoot.add(seated.discGroup);
 
     const held = createDiscGroup(labelTexture, dataTexture);
-    held.discGroup.visible = false;
-    held.discGroup.scale.setScalar(0.01);
+    if (initialView === "disc") {
+      caseRoot.visible = false;
+      held.discGroup.visible = true;
+      held.discGroup.scale.setScalar(1);
+    } else {
+      held.discGroup.visible = false;
+      held.discGroup.scale.setScalar(0.01);
+    }
     root.add(held.discGroup);
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.4));
@@ -665,8 +678,8 @@ function mountScene(
       osc.stop(start + 0.3);
     };
 
-    let view: ViewMode = "jacket";
-    let transition = 0;
+    let view: ViewMode = initialView;
+    let transition = initialView === "disc" ? 1 : 0;
     let transitionFrom = 0;
     let transitionTo = 0;
     let transitioning = false;
