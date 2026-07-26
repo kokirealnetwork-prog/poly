@@ -1,8 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { CdDisc } from "@/components/cd-disc";
+import {
+  getAlbum,
+  nextAlbumId,
+  prevAlbumId,
+  type AlbumId,
+} from "@/lib/album-art";
 
 export default function Home() {
+  const [albumId, setAlbumId] = useState<AlbumId>("slow-bright");
+  const album = getAlbum(albumId);
+
   return (
     <main className="player-shell">
       <div className="player">
@@ -11,11 +21,16 @@ export default function Home() {
         </header>
 
         <div className="player-stage">
-          <CdDisc initialView="jacket" />
+          <CdDisc key={albumId} albumId={albumId} initialView="jacket" />
         </div>
 
         <div className="player-meta">
-          <button type="button" className="player-chevron" aria-label="Previous">
+          <button
+            type="button"
+            className="player-chevron"
+            aria-label="Previous album"
+            onClick={() => setAlbumId((id) => prevAlbumId(id))}
+          >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
               <path
                 d="M14.5 5.5 8 12l6.5 6.5"
@@ -28,10 +43,15 @@ export default function Home() {
             </svg>
           </button>
           <div className="player-copy">
-            <p className="player-title">Slow Bright</p>
-            <p className="player-artist">OWN</p>
+            <p className="player-title">{album.title}</p>
+            <p className="player-artist">{album.artist}</p>
           </div>
-          <button type="button" className="player-chevron" aria-label="Next">
+          <button
+            type="button"
+            className="player-chevron"
+            aria-label="Next album"
+            onClick={() => setAlbumId((id) => nextAlbumId(id))}
+          >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
               <path
                 d="M9.5 5.5 16 12l-6.5 6.5"
