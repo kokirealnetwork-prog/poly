@@ -25,8 +25,8 @@ function cssFont(cssVar: string, fallback: string) {
   return value ? `${value}, ${fallback}` : fallback;
 }
 
-function fontSyne() {
-  return cssFont("--font-syne", "Syne, sans-serif");
+function fontDisplay() {
+  return cssFont("--font-zen", "Zen Kurenaido, serif");
 }
 
 function fontFigtree() {
@@ -48,72 +48,98 @@ function createCanvasTexture(
   return texture;
 }
 
-function paintAlbumArt(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  // Contemporary editorial cover: soft graphite field, ice accent, bold type
-  ctx.fillStyle = "#14161a";
+function softBlob(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  color: string,
+) {
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function paintWatercolorSky(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  // Base wash — airy sky blue to white
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#cfeaf8");
+  sky.addColorStop(0.35, "#e7f5fc");
+  sky.addColorStop(0.7, "#f7fbfe");
+  sky.addColorStop(1, "#eef6e8");
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
-  // Soft vertical wash
-  const wash = ctx.createLinearGradient(0, 0, w * 0.85, h);
-  wash.addColorStop(0, "rgba(90, 120, 130, 0.0)");
-  wash.addColorStop(0.45, "rgba(120, 170, 175, 0.18)");
-  wash.addColorStop(1, "rgba(200, 245, 120, 0.12)");
-  ctx.fillStyle = wash;
-  ctx.fillRect(0, 0, w, h);
+  // Soft watercolor blooms
+  softBlob(ctx, w * 0.2, h * 0.18, w * 0.35, "rgba(170, 214, 240, 0.55)");
+  softBlob(ctx, w * 0.75, h * 0.12, w * 0.32, "rgba(186, 224, 245, 0.5)");
+  softBlob(ctx, w * 0.55, h * 0.3, w * 0.4, "rgba(255, 255, 255, 0.65)");
+  softBlob(ctx, w * 0.15, h * 0.55, w * 0.28, "rgba(190, 230, 210, 0.28)");
+  softBlob(ctx, w * 0.82, h * 0.62, w * 0.3, "rgba(255, 236, 180, 0.22)");
+  softBlob(ctx, w * 0.5, h * 0.78, w * 0.45, "rgba(210, 232, 200, 0.35)");
 
-  // Large geometric ring — modern CD motif
+  // Distant path toward the light
   ctx.save();
-  ctx.translate(w * 0.68, h * 0.58);
-  ctx.strokeStyle = "rgba(232, 244, 236, 0.9)";
-  ctx.lineWidth = w * 0.018;
   ctx.beginPath();
-  ctx.arc(0, 0, w * 0.28, -Math.PI * 0.15, Math.PI * 1.1);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(190, 245, 110, 0.85)";
-  ctx.lineWidth = w * 0.006;
-  ctx.beginPath();
-  ctx.arc(0, 0, w * 0.34, Math.PI * 0.2, Math.PI * 1.35);
-  ctx.stroke();
-  // Solid accent disc
-  ctx.fillStyle = "#bef56e";
-  ctx.beginPath();
-  ctx.arc(-w * 0.02, -h * 0.08, w * 0.045, 0, Math.PI * 2);
+  ctx.moveTo(w * 0.42, h * 0.92);
+  ctx.quadraticCurveTo(w * 0.46, h * 0.62, w * 0.49, h * 0.42);
+  ctx.quadraticCurveTo(w * 0.52, h * 0.62, w * 0.58, h * 0.92);
+  ctx.closePath();
+  const pathGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
+  pathGrad.addColorStop(0, "rgba(255,255,255,0.15)");
+  pathGrad.addColorStop(1, "rgba(210, 200, 170, 0.35)");
+  ctx.fillStyle = pathGrad;
   ctx.fill();
   ctx.restore();
 
-  // Fine grid hint (very subtle)
-  ctx.save();
-  ctx.globalAlpha = 0.06;
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 1;
-  for (let i = 1; i < 12; i += 1) {
-    const x = (w / 12) * i;
+  // Bright horizon glow
+  softBlob(ctx, w * 0.5, h * 0.38, w * 0.22, "rgba(255, 255, 255, 0.85)");
+  softBlob(ctx, w * 0.5, h * 0.36, w * 0.1, "rgba(255, 250, 220, 0.55)");
+
+  // Two tiny figures on the path
+  ctx.fillStyle = "rgba(70, 90, 110, 0.45)";
+  const drawFigure = (fx: number, fy: number, scale: number) => {
     ctx.beginPath();
-    ctx.moveTo(x, h * 0.08);
-    ctx.lineTo(x, h * 0.92);
-    ctx.stroke();
-  }
-  ctx.restore();
+    ctx.ellipse(fx, fy - scale * 7, scale * 2.2, scale * 2.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - scale * 4);
+    ctx.quadraticCurveTo(fx - scale * 3, fy + scale * 4, fx - scale * 1.5, fy + scale * 10);
+    ctx.quadraticCurveTo(fx, fy + scale * 6, fx + scale * 1.5, fy + scale * 10);
+    ctx.quadraticCurveTo(fx + scale * 3, fy + scale * 4, fx, fy - scale * 4);
+    ctx.fill();
+  };
+  drawFigure(w * 0.475, h * 0.7, w * 0.0045);
+  drawFigure(w * 0.515, h * 0.695, w * 0.0048);
+}
 
-  // Typography block — left aligned, contemporary
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "rgba(236, 242, 238, 0.45)";
-  ctx.font = `500 ${Math.round(w * 0.028)}px ${fontFigtree()}`;
-  ctx.fillText("OWN  ·  CATALOG 07", w * 0.08, h * 0.14);
+function paintAlbumArt(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  paintWatercolorSky(ctx, w, h);
 
-  ctx.fillStyle = "#f4f7f5";
-  ctx.font = `600 ${Math.round(w * 0.092)}px ${fontSyne()}`;
-  ctx.fillText("SOFT", w * 0.08, h * 0.28);
-  ctx.fillText("SIGNAL", w * 0.08, h * 0.38);
+  // Thin white frame — like the reference jacket
+  ctx.strokeStyle = "rgba(255,255,255,0.78)";
+  ctx.lineWidth = Math.max(2, w * 0.006);
+  const inset = w * 0.14;
+  ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2);
 
-  ctx.fillStyle = "rgba(190, 245, 110, 0.95)";
-  ctx.font = `500 ${Math.round(w * 0.03)}px ${fontFigtree()}`;
-  ctx.fillText("digital analogue · vol.01", w * 0.08, h * 0.46);
+  // Handwritten-style title block
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "rgba(55, 72, 92, 0.82)";
+  ctx.font = `400 ${Math.round(w * 0.07)}px ${fontDisplay()}`;
+  ctx.fillText("夏のボーイフレンド", w / 2, h * 0.5);
 
-  ctx.fillStyle = "rgba(236, 242, 238, 0.35)";
-  ctx.font = `400 ${Math.round(w * 0.024)}px ${fontFigtree()}`;
-  ctx.fillText("所持盤", w * 0.08, h * 0.88);
+  ctx.fillStyle = "rgba(90, 115, 135, 0.7)";
+  ctx.font = `400 ${Math.round(w * 0.022)}px ${fontFigtree()}`;
+  ctx.fillText("NATSU NO BOYFRIEND  since 2009", w / 2, h * 0.57);
+
+  ctx.fillStyle = "rgba(110, 140, 155, 0.55)";
+  ctx.font = `500 ${Math.round(w * 0.018)}px ${fontFigtree()}`;
+  ctx.fillText("A SONG WITH OWN", w / 2, h * 0.62);
 }
 
 function createJacketTexture() {
@@ -124,36 +150,31 @@ function createJacketTexture() {
 
 function createBackCoverTexture() {
   return createCanvasTexture((ctx, size) => {
-    ctx.fillStyle = "#101214";
+    paintWatercolorSky(ctx, size, size);
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
     ctx.fillRect(0, 0, size, size);
 
-    ctx.fillStyle = "rgba(190, 245, 110, 0.9)";
-    ctx.fillRect(size * 0.08, size * 0.08, size * 0.012, size * 0.12);
-
-    ctx.fillStyle = "#f4f7f5";
+    ctx.fillStyle = "rgba(55, 72, 92, 0.85)";
     ctx.textAlign = "left";
-    ctx.font = `600 ${Math.round(size * 0.048)}px ${fontSyne()}`;
-    ctx.fillText("SOFT SIGNAL", size * 0.12, size * 0.14);
-    ctx.font = `400 ${Math.round(size * 0.024)}px ${fontFigtree()}`;
-    ctx.fillStyle = "rgba(236, 242, 238, 0.45)";
-    ctx.fillText("OWN  ·  CATALOG 07", size * 0.12, size * 0.2);
+    ctx.font = `400 ${Math.round(size * 0.048)}px ${fontDisplay()}`;
+    ctx.fillText("夏のボーイフレンド", size * 0.1, size * 0.16);
+    ctx.font = `400 ${Math.round(size * 0.02)}px ${fontFigtree()}`;
+    ctx.fillStyle = "rgba(90, 115, 135, 0.7)";
+    ctx.fillText("NATSU NO BOYFRIEND  ·  OWN", size * 0.1, size * 0.22);
 
     const tracks = [
-      ["01", "Warm Boot"],
-      ["02", "Glass Lobby"],
-      ["03", "Low Battery"],
-      ["04", "Afterimage"],
-      ["05", "Soft Signal"],
-      ["06", "Return Path"],
+      "01  朝の窓辺",
+      "02  自転車の影",
+      "03  汽水の匂い",
+      "04  午後のバス",
+      "05  帰り道",
+      "06  夜のラジオ",
     ];
-    tracks.forEach(([num, title], index) => {
-      const y = size * (0.36 + index * 0.08);
-      ctx.fillStyle = "rgba(190, 245, 110, 0.75)";
-      ctx.font = `500 ${Math.round(size * 0.022)}px ${fontFigtree()}`;
-      ctx.fillText(num, size * 0.12, y);
-      ctx.fillStyle = "rgba(244, 247, 245, 0.85)";
-      ctx.font = `400 ${Math.round(size * 0.028)}px ${fontFigtree()}`;
-      ctx.fillText(title, size * 0.22, y);
+    tracks.forEach((track, index) => {
+      const y = size * (0.38 + index * 0.075);
+      ctx.fillStyle = "rgba(70, 95, 115, 0.72)";
+      ctx.font = `400 ${Math.round(size * 0.028)}px ${fontDisplay()}`;
+      ctx.fillText(track, size * 0.1, y);
     });
   });
 }
@@ -164,17 +185,19 @@ function createSpineTexture() {
   canvas.height = 1024;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    ctx.fillStyle = "#14161a";
+    const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+    grad.addColorStop(0, "#cfeaf8");
+    grad.addColorStop(0.5, "#e8f5fb");
+    grad.addColorStop(1, "#dcefdc");
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 256, 1024);
-    ctx.fillStyle = "#bef56e";
-    ctx.fillRect(0, 0, 256, 28);
     ctx.save();
     ctx.translate(128, 512);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = "#f4f7f5";
-    ctx.font = `600 40px ${fontSyne()}`;
+    ctx.fillStyle = "rgba(55, 72, 92, 0.8)";
+    ctx.font = `400 36px ${fontDisplay()}`;
     ctx.textAlign = "center";
-    ctx.fillText("SOFT SIGNAL  ·  OWN", 0, 12);
+    ctx.fillText("夏のボーイフレンド  ·  OWN", 0, 12);
     ctx.restore();
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -184,63 +207,35 @@ function createSpineTexture() {
 
 function createLabelTexture() {
   return createCanvasTexture((ctx, size) => {
-    ctx.fillStyle = "#14161a";
-    ctx.fillRect(0, 0, size, size);
-
-    const wash = ctx.createRadialGradient(
-      size * 0.55,
-      size * 0.45,
-      size * 0.05,
-      size * 0.5,
-      size * 0.5,
-      size * 0.5,
-    );
-    wash.addColorStop(0, "rgba(120, 170, 175, 0.25)");
-    wash.addColorStop(0.6, "rgba(20, 22, 26, 0.1)");
-    wash.addColorStop(1, "#14161a");
-    ctx.fillStyle = wash;
-    ctx.fillRect(0, 0, size, size);
-
-    // Concentric modern rings on label
-    ctx.save();
-    ctx.translate(size / 2, size / 2);
-    for (const [r, color, width] of [
-      [size * 0.42, "rgba(244,247,245,0.2)", 2],
-      [size * 0.34, "rgba(190,245,110,0.55)", 3],
-      [size * 0.26, "rgba(244,247,245,0.12)", 1.5],
-    ] as const) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // Matching soft watercolor disc face — mostly image, little text
+    paintWatercolorSky(ctx, size, size);
 
     const hub = INNER_RADIUS / OUTER_RADIUS;
     const labelOuter = HUB_RADIUS / OUTER_RADIUS;
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size * hub * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = "#0c0e10";
-    ctx.fill();
 
+    // Soft ring toward hub
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * labelOuter * 0.5, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(190,245,110,0.35)";
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size * hub * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#f7fbfe";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(170, 200, 220, 0.5)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#f4f7f5";
-    ctx.font = `600 ${Math.round(size * 0.048)}px ${fontSyne()}`;
-    ctx.fillText("SOFT SIGNAL", size / 2, size * 0.34);
-    ctx.fillStyle = "rgba(190, 245, 110, 0.9)";
-    ctx.font = `500 ${Math.round(size * 0.026)}px ${fontFigtree()}`;
-    ctx.fillText("OWN  ·  SIDE A", size / 2, size * 0.42);
-    ctx.fillStyle = "rgba(244, 247, 245, 0.4)";
-    ctx.font = `400 ${Math.round(size * 0.022)}px ${fontFigtree()}`;
-    ctx.fillText("CATALOG 07", size / 2, size * 0.62);
+    ctx.fillStyle = "rgba(55, 72, 92, 0.55)";
+    ctx.font = `400 ${Math.round(size * 0.032)}px ${fontDisplay()}`;
+    ctx.fillText("夏のボーイフレンド", size / 2, size * 0.36);
+    ctx.fillStyle = "rgba(90, 115, 135, 0.4)";
+    ctx.font = `400 ${Math.round(size * 0.018)}px ${fontFigtree()}`;
+    ctx.fillText("OWN", size / 2, size * 0.64);
   });
 }
 
@@ -254,25 +249,25 @@ function createDataSideTexture() {
       size / 2,
       size * 0.5,
     );
-    base.addColorStop(0, "#2a3238");
-    base.addColorStop(1, "#0a0c0e");
+    base.addColorStop(0, "#d8e8f2");
+    base.addColorStop(0.5, "#9bb8c8");
+    base.addColorStop(1, "#6a8494");
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, size, size);
 
     for (let r = 70; r < size * 0.48; r += 2.5) {
       const t = (r - 70) / (size * 0.48 - 70);
-      // Cool silver → mint iridescence, not rainbow candy
-      const hue = 160 + t * 40;
+      const hue = 190 + t * 25;
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `hsla(${hue}, 35%, ${38 + (r % 6)}%, ${0.07 + (r % 4) * 0.012})`;
+      ctx.strokeStyle = `hsla(${hue}, 28%, ${55 + (r % 5)}%, ${0.06 + (r % 4) * 0.01})`;
       ctx.lineWidth = 1.1;
       ctx.stroke();
     }
 
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * 0.14, 0, Math.PI * 2);
-    ctx.fillStyle = "#101214";
+    ctx.fillStyle = "#eef6fa";
     ctx.fill();
   });
 }

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Figtree, Syne } from "next/font/google";
+import { Figtree, Zen_Kurenaido } from "next/font/google";
 import "./globals.css";
 
-const display = Syne({
-  variable: "--font-syne",
+const display = Zen_Kurenaido({
+  variable: "--font-zen",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "400",
 });
 
 const sans = Figtree({
