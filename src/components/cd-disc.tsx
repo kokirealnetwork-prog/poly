@@ -304,16 +304,12 @@ function createJewelCase(
   caseRoot.add(shell);
 
   const makePlastic = () =>
-    new THREE.MeshPhysicalMaterial({
-      color: 0xd8e2ea,
+    new THREE.MeshStandardMaterial({
+      color: 0xf2f4f6,
       metalness: 0.05,
-      roughness: 0.12,
-      transmission: 0.55,
-      thickness: 0.35,
+      roughness: 0.35,
       transparent: true,
-      opacity: 0.55,
-      clearcoat: 1,
-      clearcoatRoughness: 0.08,
+      opacity: 0.35,
     });
 
   const disposables: (THREE.BufferGeometry | THREE.Material)[] = [];
@@ -326,10 +322,10 @@ function createJewelCase(
   disposables.push(backGeo, backMat);
 
   const backArtGeo = new THREE.PlaneGeometry(CASE_W * 0.94, CASE_H * 0.94);
-  const backArtMat = new THREE.MeshPhysicalMaterial({
+  const backArtMat = new THREE.MeshStandardMaterial({
     map: backTexture,
-    roughness: 0.45,
-    metalness: 0.05,
+    roughness: 0.55,
+    metalness: 0.02,
   });
   const backArt = new THREE.Mesh(backArtGeo, backArtMat);
   backArt.position.z = -CASE_D * 0.5 - 0.002;
@@ -338,21 +334,22 @@ function createJewelCase(
   disposables.push(backArtGeo, backArtMat);
 
   const spineGeo = new THREE.BoxGeometry(CASE_D * 0.9, CASE_H, CASE_D * 0.9);
-  const spineMat = new THREE.MeshPhysicalMaterial({
+  const spineMat = new THREE.MeshStandardMaterial({
     map: spineTexture,
-    roughness: 0.4,
-    metalness: 0.05,
+    roughness: 0.5,
+    metalness: 0.02,
   });
   const spine = new THREE.Mesh(spineGeo, spineMat);
   spine.position.set(-CASE_W / 2 + CASE_D * 0.2, 0, -CASE_D * 0.05);
   shell.add(spine);
   disposables.push(spineGeo, spineMat);
 
+  // Light tray — a dark tray reads as a navy drop-shadow on white.
   const trayGeo = new THREE.BoxGeometry(CASE_W * 0.88, CASE_H * 0.88, 0.08);
-  const trayMat = new THREE.MeshPhysicalMaterial({
-    color: 0x1c2228,
-    roughness: 0.55,
-    metalness: 0.1,
+  const trayMat = new THREE.MeshStandardMaterial({
+    color: 0xe8ecf0,
+    roughness: 0.7,
+    metalness: 0,
   });
   const tray = new THREE.Mesh(trayGeo, trayMat);
   tray.position.z = -CASE_D * 0.08;
@@ -375,12 +372,10 @@ function createJewelCase(
   disposables.push(frontGeo, frontMat);
 
   const jacketGeo = new THREE.PlaneGeometry(CASE_W * 0.92, CASE_H * 0.92);
-  const jacketMat = new THREE.MeshPhysicalMaterial({
+  const jacketMat = new THREE.MeshStandardMaterial({
     map: jacketTexture,
-    roughness: 0.42,
-    metalness: 0.04,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.3,
+    roughness: 0.5,
+    metalness: 0.02,
   });
   const jacket = new THREE.Mesh(jacketGeo, jacketMat);
   jacket.position.z = 0.075;
@@ -388,10 +383,10 @@ function createJewelCase(
   disposables.push(jacketGeo, jacketMat);
 
   const bookletGeo = new THREE.PlaneGeometry(CASE_W * 0.9, CASE_H * 0.9);
-  const bookletMat = new THREE.MeshPhysicalMaterial({
+  const bookletMat = new THREE.MeshStandardMaterial({
     map: jacketTexture,
-    roughness: 0.5,
-    metalness: 0.04,
+    roughness: 0.55,
+    metalness: 0.02,
   });
   const booklet = new THREE.Mesh(bookletGeo, bookletMat);
   booklet.position.z = 0.01;
@@ -417,7 +412,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     scene.background = new THREE.Color(0xffffff);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-    camera.position.set(0, 0.85, 7.6);
+    camera.position.set(0, 0.35, 7.2);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -428,8 +423,8 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     renderer.setClearColor(0xffffff, 1);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    // Keep pure white — filmic tone mapping can muddy the clear color.
+    renderer.toneMapping = THREE.NoToneMapping;
     renderer.shadowMap.enabled = false;
     container.appendChild(renderer.domElement);
 
@@ -440,7 +435,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     const dataTexture = createDataSideTexture();
 
     const root = new THREE.Group();
-    root.rotation.set(-0.28, 0.42, 0.06);
+    root.rotation.set(-0.12, 0.28, 0.02);
     scene.add(root);
 
     const { caseRoot, lid, disposables: caseDisposables } = createJewelCase(
@@ -461,17 +456,17 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     held.discGroup.scale.setScalar(0.01);
     root.add(held.discGroup);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.05));
-    const key = new THREE.DirectionalLight(0xffffff, 2.1);
-    key.position.set(-3.5, 5.5, 4.5);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+    const key = new THREE.DirectionalLight(0xffffff, 1.6);
+    key.position.set(-2.5, 4, 5);
     key.castShadow = false;
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0xffffff, 1.35);
-    fill.position.set(4, 2.5, 3);
+    const fill = new THREE.DirectionalLight(0xffffff, 1.4);
+    fill.position.set(3, 3, 2);
     fill.castShadow = false;
     scene.add(fill);
-    const bounce = new THREE.DirectionalLight(0xffffff, 1.2);
-    bounce.position.set(0, -4, 2);
+    const bounce = new THREE.DirectionalLight(0xffffff, 1.5);
+    bounce.position.set(0, -5, 3);
     bounce.castShadow = false;
     scene.add(bounce);
 

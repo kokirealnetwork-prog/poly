@@ -30,7 +30,9 @@ export default function RootLayout({
       lang="ja"
       className={`${display.variable} ${sans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col" style={{ background: "#ffffff" }}>
+        {children}
+      </body>
     </html>
   );
 }

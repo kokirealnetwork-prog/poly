@@ -21,8 +21,9 @@ body {
   width: 100%;
   min-height: 100%;
   margin: 0;
+  padding: 0;
   overflow: hidden;
-  background: #ffffff;
+  background: #ffffff !important;
   color: var(--foreground);
 }
 
@@ -30,34 +31,29 @@ body {
   display: grid;
   width: 100vw;
   height: 100svh;
+  margin: 0;
+  padding: 0;
   place-items: center;
-  background: #ffffff;
+  background: #ffffff !important;
 }
 
 .cd-disc {
-  width: min(88vw, 560px);
-  height: min(88vw, 560px);
-  max-height: 88svh;
+  width: 100vw;
+  height: 100svh;
   outline: none;
   cursor: grab;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  background: #ffffff;
 }
 
 .cd-disc canvas {
   display: block;
   width: 100%;
   height: 100%;
+  background: #ffffff;
 }
 
 .cd-disc canvas.is-dragging {
   cursor: grabbing;
-}
-
-@media (max-width: 640px) {
-  .cd-disc {
-    width: 92vw;
-    height: 92vw;
-    max-height: 92svh;
-  }
 }
