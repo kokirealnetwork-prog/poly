@@ -8,9 +8,9 @@ const INNER_RADIUS = 0.3;
 const HUB_RADIUS = 0.72;
 const DISC_THICKNESS = 0.055;
 
-const CASE_W = 4.55;
-const CASE_H = 4.05;
-const CASE_D = 0.38;
+const CASE_W = 3.55;
+const CASE_H = 3.15;
+const CASE_D = 0.32;
 
 type ViewMode = "jacket" | "disc";
 
@@ -415,7 +415,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-    camera.position.set(0, 1.15, 8.2);
+    camera.position.set(0, 0.85, 7.6);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -447,9 +447,9 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     root.add(caseRoot);
 
     const seated = createDiscGroup(labelTexture, dataTexture);
-    seated.discGroup.scale.setScalar(0.92);
+    seated.discGroup.scale.setScalar(0.72);
     seated.discGroup.rotation.x = -Math.PI / 2;
-    seated.discGroup.position.set(0.08, 0, -0.02);
+    seated.discGroup.position.set(0.06, 0, -0.015);
     caseRoot.add(seated.discGroup);
 
     const held = createDiscGroup(labelTexture, dataTexture);
@@ -457,7 +457,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     held.discGroup.scale.setScalar(0.01);
     root.add(held.discGroup);
 
-    const shadowGeo = new THREE.PlaneGeometry(5.2, 4.6);
+    const shadowGeo = new THREE.PlaneGeometry(4.2, 3.7);
     shadowGeo.rotateX(-Math.PI / 2);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x0a0c10,
@@ -466,7 +466,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       depthWrite: false,
     });
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.position.set(0, -2.15, 0);
+    shadow.position.set(0, -1.85, 0);
     scene.add(shadow);
 
     scene.add(new THREE.AmbientLight(0xfff4e8, 0.55));
@@ -530,7 +530,10 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     let transitionTo = 0;
     let transitioning = false;
     let transitionStart = 0;
-    const TRANSITION_MS = 780;
+    const TRANSITION_MS = 620;
+    // Lid opens only this far, then we cut to the disc view.
+    const OPEN_CUT = 0.38;
+    const LID_OPEN_ANGLE = 0.95;
 
     let dragging = false;
     let previousX = 0;
@@ -543,6 +546,13 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     let pointerDownTime = 0;
     const TAP_MAX_MOVEMENT = 8;
     const TAP_MAX_DURATION_MS = 320;
+
+    const resetSeatedDisc = () => {
+      seated.discGroup.scale.setScalar(0.72);
+      seated.discGroup.rotation.x = -Math.PI / 2;
+      seated.discGroup.position.set(0.06, 0, -0.015);
+      seated.discGroup.visible = true;
+    };
 
     const beginTransition = (next: ViewMode) => {
       if (transitioning || next === view) return;
@@ -557,10 +567,15 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       navigator.vibrate?.(16);
 
       if (next === "disc") {
-        held.discGroup.visible = true;
-      } else {
+        // Keep disc view hidden until the mid-open cut.
+        held.discGroup.visible = false;
+        held.discGroup.scale.setScalar(0.01);
         caseRoot.visible = true;
-        seated.discGroup.visible = true;
+        resetSeatedDisc();
+        lid.rotation.y = 0;
+      } else {
+        caseRoot.visible = false;
+        held.discGroup.visible = true;
       }
       velocityX = 0;
       velocityY = 0;
@@ -651,39 +666,69 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
         );
         const t = easeInOut(raw);
         transition = transitionFrom + (transitionTo - transitionFrom) * t;
+        const opening = transitionTo > transitionFrom;
 
-        lid.rotation.y = -transition * 1.85;
-        seated.discGroup.position.z = -0.02 + transition * 0.55;
-        seated.discGroup.position.y = transition * 0.35;
-        seated.discGroup.visible = transition < 0.72;
-
-        caseRoot.scale.setScalar(1 - transition * 0.55);
-        caseRoot.position.y = -transition * 0.4;
-        caseRoot.visible = transition < 0.98;
-
-        held.discGroup.visible = transition > 0.28;
-        held.discGroup.scale.setScalar(Math.max(0.01, (transition - 0.28) / 0.72));
-        held.discGroup.position.y = (1 - transition) * 0.55;
-        held.discGroup.rotation.x = (1 - transition) * -0.65;
+        if (opening) {
+          // Phase 1: lid opens a little — disc stays seated, no piercing.
+          if (transition < OPEN_CUT) {
+            const openT = transition / OPEN_CUT;
+            lid.rotation.y = -openT * LID_OPEN_ANGLE;
+            caseRoot.visible = true;
+            caseRoot.scale.setScalar(1);
+            caseRoot.position.set(0, 0, 0);
+            resetSeatedDisc();
+            held.discGroup.visible = false;
+            held.discGroup.scale.setScalar(0.01);
+          } else {
+            // Phase 2: cut short — hide jacket, reveal CD.
+            caseRoot.visible = false;
+            lid.rotation.y = 0;
+            resetSeatedDisc();
+            const reveal = (transition - OPEN_CUT) / (1 - OPEN_CUT);
+            held.discGroup.visible = true;
+            held.discGroup.scale.setScalar(0.82 + reveal * 0.18);
+            held.discGroup.position.set(0, (1 - reveal) * 0.25, 0);
+            held.discGroup.rotation.x = (1 - reveal) * -0.35;
+          }
+        } else {
+          // Return: CD out, then jacket appears already closed.
+          const closing = 1 - transition;
+          if (closing < 0.45) {
+            const outT = closing / 0.45;
+            held.discGroup.visible = true;
+            held.discGroup.scale.setScalar(1 - outT * 0.9);
+            held.discGroup.position.set(0, outT * 0.2, 0);
+            caseRoot.visible = false;
+          } else {
+            held.discGroup.visible = false;
+            held.discGroup.scale.setScalar(0.01);
+            caseRoot.visible = true;
+            caseRoot.scale.setScalar(1);
+            caseRoot.position.set(0, 0, 0);
+            lid.rotation.y = 0;
+            resetSeatedDisc();
+          }
+        }
 
         if (raw >= 1) {
           transitioning = false;
           transition = transitionTo;
           if (transitionTo === 1) {
             caseRoot.visible = false;
-            seated.discGroup.position.set(0.08, 0, -0.02);
-            seated.discGroup.visible = true;
+            held.discGroup.visible = true;
             held.discGroup.scale.setScalar(1);
             held.discGroup.position.set(0, 0, 0);
             held.discGroup.rotation.x = 0;
           } else {
             held.discGroup.visible = false;
             held.discGroup.scale.setScalar(0.01);
-            lid.rotation.y = 0;
+            held.discGroup.position.set(0, 0, 0);
+            held.discGroup.rotation.x = 0;
+            caseRoot.visible = true;
             caseRoot.scale.setScalar(1);
-            caseRoot.position.y = 0;
-            seated.discGroup.position.set(0.08, 0, -0.02);
-            seated.discGroup.visible = true;
+            caseRoot.position.set(0, 0, 0);
+            lid.rotation.y = 0;
+            resetSeatedDisc();
           }
         }
       } else if (!dragging) {
@@ -701,7 +746,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       const discBias = transition;
       shadowMat.opacity =
         0.18 + Math.min(0.1, (Math.abs(velocityX) + Math.abs(velocityY)) * 0.002);
-      shadow.scale.set(1 - discBias * 0.15, 1, 1 - discBias * 0.15);
+      shadow.scale.set(1 - discBias * 0.12, 1, 1 - discBias * 0.12);
 
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(animate);
