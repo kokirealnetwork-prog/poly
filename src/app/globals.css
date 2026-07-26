@@ -62,31 +62,10 @@ button {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.55rem;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.28em;
-}
-
-.player-home-rule {
-  display: block;
-  width: 4.5rem;
-  height: 1px;
-  background: var(--muted);
-  position: relative;
-}
-
-.player-home-rule::before {
-  content: "";
-  position: absolute;
-  left: -2px;
-  top: -3px;
-  width: 8px;
-  height: 1px;
-  background: var(--muted);
-  transform: rotate(-28deg);
-  transform-origin: left center;
 }
 
 .player-stage {

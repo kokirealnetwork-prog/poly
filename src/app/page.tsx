@@ -8,7 +8,6 @@ export default function Home() {
       <div className="player">
         <header className="player-home-label">
           <span>HOME</span>
-          <span className="player-home-rule" aria-hidden />
         </header>
 
         <div className="player-stage">
