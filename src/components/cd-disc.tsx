@@ -8,9 +8,9 @@ const INNER_RADIUS = 0.15;
 const HUB_RADIUS = 0.36;
 const DISC_THICKNESS = 0.028;
 
-const CASE_W = 1.78;
-const CASE_H = 1.58;
-const CASE_D = 0.16;
+const CASE_W = 1.7;
+const CASE_H = 1.7;
+const CASE_D = 0.14;
 
 type ViewMode = "jacket" | "disc";
 
