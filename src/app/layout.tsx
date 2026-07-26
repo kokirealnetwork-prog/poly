@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Figtree, Zen_Kurenaido } from "next/font/google";
+import { Caveat, Figtree } from "next/font/google";
 import "./globals.css";
 
-const display = Zen_Kurenaido({
-  variable: "--font-zen",
+const display = Caveat({
+  variable: "--font-script",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600"],
 });
 
 const sans = Figtree({
@@ -15,9 +15,8 @@ const sans = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "OWN — 所持盤",
-  description:
-    "CDのモデリングをデジタル上で触って回せる。アナログな所有感を残したWeb体験。",
+  title: "OWN",
+  description: "A digital CD you can hold and spin.",
 };
 
 export default function RootLayout({
@@ -27,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="ja"
+      lang="en"
       className={`${display.variable} ${sans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" style={{ background: "#ffffff" }}>

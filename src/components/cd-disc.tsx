@@ -25,8 +25,10 @@ function cssFont(cssVar: string, fallback: string) {
   return value ? `${value}, ${fallback}` : fallback;
 }
 
-function fontDisplay() {
-  return cssFont("--font-zen", "Zen Kurenaido, serif");
+const TEXTURE_SIZE = 2048;
+
+function fontScript() {
+  return cssFont("--font-script", "Caveat, cursive");
 }
 
 function fontFigtree() {
@@ -35,16 +37,23 @@ function fontFigtree() {
 
 function createCanvasTexture(
   draw: (ctx: CanvasRenderingContext2D, size: number) => void,
-  size = 1024,
+  size = TEXTURE_SIZE,
 ) {
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
-  if (ctx) draw(ctx, size);
+  if (ctx) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    draw(ctx, size);
+  }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
+  texture.anisotropy = 16;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   return texture;
 }
 
@@ -64,82 +73,107 @@ function softBlob(
   ctx.fill();
 }
 
+function paintGrain(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const image = ctx.getImageData(0, 0, w, h);
+  const data = image.data;
+  for (let i = 0; i < data.length; i += 16) {
+    const n = (Math.random() - 0.5) * 10;
+    data[i] = Math.min(255, Math.max(0, data[i] + n));
+    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + n));
+    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + n));
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
 function paintWatercolorSky(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  // Base wash — airy sky blue to white
   const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, "#cfeaf8");
-  sky.addColorStop(0.35, "#e7f5fc");
-  sky.addColorStop(0.7, "#f7fbfe");
-  sky.addColorStop(1, "#eef6e8");
+  sky.addColorStop(0, "#b9dff2");
+  sky.addColorStop(0.28, "#d7eef9");
+  sky.addColorStop(0.62, "#f5fbfe");
+  sky.addColorStop(1, "#e8f3e4");
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
-  // Soft watercolor blooms
-  softBlob(ctx, w * 0.2, h * 0.18, w * 0.35, "rgba(170, 214, 240, 0.55)");
-  softBlob(ctx, w * 0.75, h * 0.12, w * 0.32, "rgba(186, 224, 245, 0.5)");
-  softBlob(ctx, w * 0.55, h * 0.3, w * 0.4, "rgba(255, 255, 255, 0.65)");
-  softBlob(ctx, w * 0.15, h * 0.55, w * 0.28, "rgba(190, 230, 210, 0.28)");
-  softBlob(ctx, w * 0.82, h * 0.62, w * 0.3, "rgba(255, 236, 180, 0.22)");
-  softBlob(ctx, w * 0.5, h * 0.78, w * 0.45, "rgba(210, 232, 200, 0.35)");
+  // Layered watercolor blooms for a softer, higher-detail wash
+  softBlob(ctx, w * 0.18, h * 0.16, w * 0.38, "rgba(150, 205, 235, 0.5)");
+  softBlob(ctx, w * 0.72, h * 0.1, w * 0.34, "rgba(175, 220, 245, 0.48)");
+  softBlob(ctx, w * 0.48, h * 0.22, w * 0.42, "rgba(255, 255, 255, 0.55)");
+  softBlob(ctx, w * 0.3, h * 0.34, w * 0.26, "rgba(200, 230, 245, 0.35)");
+  softBlob(ctx, w * 0.78, h * 0.4, w * 0.24, "rgba(255, 248, 220, 0.2)");
+  softBlob(ctx, w * 0.12, h * 0.58, w * 0.3, "rgba(185, 225, 205, 0.28)");
+  softBlob(ctx, w * 0.86, h * 0.66, w * 0.28, "rgba(255, 230, 175, 0.18)");
+  softBlob(ctx, w * 0.5, h * 0.8, w * 0.48, "rgba(205, 230, 195, 0.32)");
+  softBlob(ctx, w * 0.62, h * 0.5, w * 0.2, "rgba(255,255,255,0.4)");
 
-  // Distant path toward the light
+  // Many small dabs = less “flat low-res” look
+  for (let i = 0; i < 40; i += 1) {
+    const x = w * (0.08 + Math.random() * 0.84);
+    const y = h * (0.05 + Math.random() * 0.7);
+    const r = w * (0.03 + Math.random() * 0.08);
+    const tone =
+      Math.random() > 0.5
+        ? `rgba(255,255,255,${0.08 + Math.random() * 0.12})`
+        : `rgba(160, 210, 235,${0.08 + Math.random() * 0.12})`;
+    softBlob(ctx, x, y, r, tone);
+  }
+
+  // Path toward bright middle distance
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(w * 0.42, h * 0.92);
-  ctx.quadraticCurveTo(w * 0.46, h * 0.62, w * 0.49, h * 0.42);
-  ctx.quadraticCurveTo(w * 0.52, h * 0.62, w * 0.58, h * 0.92);
+  ctx.moveTo(w * 0.4, h * 0.94);
+  ctx.quadraticCurveTo(w * 0.455, h * 0.6, w * 0.492, h * 0.4);
+  ctx.quadraticCurveTo(w * 0.53, h * 0.6, w * 0.6, h * 0.94);
   ctx.closePath();
-  const pathGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
-  pathGrad.addColorStop(0, "rgba(255,255,255,0.15)");
-  pathGrad.addColorStop(1, "rgba(210, 200, 170, 0.35)");
+  const pathGrad = ctx.createLinearGradient(0, h * 0.38, 0, h);
+  pathGrad.addColorStop(0, "rgba(255,255,255,0.12)");
+  pathGrad.addColorStop(1, "rgba(205, 195, 165, 0.32)");
   ctx.fillStyle = pathGrad;
   ctx.fill();
   ctx.restore();
 
-  // Bright horizon glow
-  softBlob(ctx, w * 0.5, h * 0.38, w * 0.22, "rgba(255, 255, 255, 0.85)");
-  softBlob(ctx, w * 0.5, h * 0.36, w * 0.1, "rgba(255, 250, 220, 0.55)");
+  softBlob(ctx, w * 0.5, h * 0.36, w * 0.24, "rgba(255, 255, 255, 0.88)");
+  softBlob(ctx, w * 0.5, h * 0.34, w * 0.1, "rgba(255, 248, 210, 0.5)");
 
-  // Two tiny figures on the path
-  ctx.fillStyle = "rgba(70, 90, 110, 0.45)";
+  // Two small figures — original composition, not a copy
+  ctx.fillStyle = "rgba(75, 95, 115, 0.4)";
   const drawFigure = (fx: number, fy: number, scale: number) => {
     ctx.beginPath();
-    ctx.ellipse(fx, fy - scale * 7, scale * 2.2, scale * 2.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(fx, fy - scale * 7, scale * 2.1, scale * 2.3, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
     ctx.moveTo(fx, fy - scale * 4);
-    ctx.quadraticCurveTo(fx - scale * 3, fy + scale * 4, fx - scale * 1.5, fy + scale * 10);
-    ctx.quadraticCurveTo(fx, fy + scale * 6, fx + scale * 1.5, fy + scale * 10);
+    ctx.quadraticCurveTo(fx - scale * 3, fy + scale * 4, fx - scale * 1.4, fy + scale * 10);
+    ctx.quadraticCurveTo(fx, fy + scale * 6, fx + scale * 1.4, fy + scale * 10);
     ctx.quadraticCurveTo(fx + scale * 3, fy + scale * 4, fx, fy - scale * 4);
     ctx.fill();
   };
-  drawFigure(w * 0.475, h * 0.7, w * 0.0045);
-  drawFigure(w * 0.515, h * 0.695, w * 0.0048);
+  drawFigure(w * 0.47, h * 0.72, w * 0.0048);
+  drawFigure(w * 0.52, h * 0.715, w * 0.005);
+
+  paintGrain(ctx, w, h);
 }
 
 function paintAlbumArt(ctx: CanvasRenderingContext2D, w: number, h: number) {
   paintWatercolorSky(ctx, w, h);
 
-  // Thin white frame — like the reference jacket
-  ctx.strokeStyle = "rgba(255,255,255,0.78)";
-  ctx.lineWidth = Math.max(2, w * 0.006);
-  const inset = w * 0.14;
+  ctx.strokeStyle = "rgba(255,255,255,0.82)";
+  ctx.lineWidth = Math.max(3, w * 0.005);
+  const inset = w * 0.145;
   ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2);
 
-  // Handwritten-style title block
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(55, 72, 92, 0.82)";
-  ctx.font = `400 ${Math.round(w * 0.07)}px ${fontDisplay()}`;
-  ctx.fillText("夏のボーイフレンド", w / 2, h * 0.5);
+  ctx.fillStyle = "rgba(55, 74, 96, 0.84)";
+  ctx.font = `500 ${Math.round(w * 0.088)}px ${fontScript()}`;
+  ctx.fillText("Slow Bright", w / 2, h * 0.48);
 
-  ctx.fillStyle = "rgba(90, 115, 135, 0.7)";
-  ctx.font = `400 ${Math.round(w * 0.022)}px ${fontFigtree()}`;
-  ctx.fillText("NATSU NO BOYFRIEND  since 2009", w / 2, h * 0.57);
+  ctx.fillStyle = "rgba(95, 120, 140, 0.72)";
+  ctx.font = `400 ${Math.round(w * 0.02)}px ${fontFigtree()}`;
+  ctx.fillText("songs for open windows  ·  2026", w / 2, h * 0.56);
 
-  ctx.fillStyle = "rgba(110, 140, 155, 0.55)";
-  ctx.font = `500 ${Math.round(w * 0.018)}px ${fontFigtree()}`;
-  ctx.fillText("A SONG WITH OWN", w / 2, h * 0.62);
+  ctx.fillStyle = "rgba(115, 145, 160, 0.55)";
+  ctx.font = `500 ${Math.round(w * 0.016)}px ${fontFigtree()}`;
+  ctx.fillText("OWN", w / 2, h * 0.615);
 }
 
 function createJacketTexture() {
@@ -151,29 +185,29 @@ function createJacketTexture() {
 function createBackCoverTexture() {
   return createCanvasTexture((ctx, size) => {
     paintWatercolorSky(ctx, size, size);
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillStyle = "rgba(255,255,255,0.42)";
     ctx.fillRect(0, 0, size, size);
 
-    ctx.fillStyle = "rgba(55, 72, 92, 0.85)";
+    ctx.fillStyle = "rgba(55, 74, 96, 0.88)";
     ctx.textAlign = "left";
-    ctx.font = `400 ${Math.round(size * 0.048)}px ${fontDisplay()}`;
-    ctx.fillText("夏のボーイフレンド", size * 0.1, size * 0.16);
-    ctx.font = `400 ${Math.round(size * 0.02)}px ${fontFigtree()}`;
-    ctx.fillStyle = "rgba(90, 115, 135, 0.7)";
-    ctx.fillText("NATSU NO BOYFRIEND  ·  OWN", size * 0.1, size * 0.22);
+    ctx.font = `500 ${Math.round(size * 0.06)}px ${fontScript()}`;
+    ctx.fillText("Slow Bright", size * 0.1, size * 0.15);
+    ctx.font = `400 ${Math.round(size * 0.018)}px ${fontFigtree()}`;
+    ctx.fillStyle = "rgba(95, 120, 140, 0.7)";
+    ctx.fillText("OWN  ·  songs for open windows", size * 0.1, size * 0.21);
 
     const tracks = [
-      "01  朝の窓辺",
-      "02  自転車の影",
-      "03  汽水の匂い",
-      "04  午後のバス",
-      "05  帰り道",
-      "06  夜のラジオ",
+      "01  Morning Glass",
+      "02  Bicycle Shade",
+      "03  Brackish Air",
+      "04  Afternoon Bus",
+      "05  Walk Home",
+      "06  Night Radio",
     ];
     tracks.forEach((track, index) => {
-      const y = size * (0.38 + index * 0.075);
-      ctx.fillStyle = "rgba(70, 95, 115, 0.72)";
-      ctx.font = `400 ${Math.round(size * 0.028)}px ${fontDisplay()}`;
+      const y = size * (0.36 + index * 0.075);
+      ctx.fillStyle = "rgba(70, 98, 118, 0.78)";
+      ctx.font = `400 ${Math.round(size * 0.028)}px ${fontFigtree()}`;
       ctx.fillText(track, size * 0.1, y);
     });
   });
@@ -181,60 +215,61 @@ function createBackCoverTexture() {
 
 function createSpineTexture() {
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 1024;
+  canvas.width = 512;
+  canvas.height = TEXTURE_SIZE;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 0, 1024);
-    grad.addColorStop(0, "#cfeaf8");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    const grad = ctx.createLinearGradient(0, 0, 0, TEXTURE_SIZE);
+    grad.addColorStop(0, "#b9dff2");
     grad.addColorStop(0.5, "#e8f5fb");
     grad.addColorStop(1, "#dcefdc");
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 1024);
+    ctx.fillRect(0, 0, 512, TEXTURE_SIZE);
     ctx.save();
-    ctx.translate(128, 512);
+    ctx.translate(256, TEXTURE_SIZE / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = "rgba(55, 72, 92, 0.8)";
-    ctx.font = `400 36px ${fontDisplay()}`;
+    ctx.fillStyle = "rgba(55, 74, 96, 0.82)";
+    ctx.font = `500 56px ${fontScript()}`;
     ctx.textAlign = "center";
-    ctx.fillText("夏のボーイフレンド  ·  OWN", 0, 12);
+    ctx.fillText("Slow Bright  ·  OWN", 0, 16);
     ctx.restore();
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 16;
   return texture;
 }
 
 function createLabelTexture() {
   return createCanvasTexture((ctx, size) => {
-    // Matching soft watercolor disc face — mostly image, little text
     paintWatercolorSky(ctx, size, size);
 
     const hub = INNER_RADIUS / OUTER_RADIUS;
     const labelOuter = HUB_RADIUS / OUTER_RADIUS;
 
-    // Soft ring toward hub
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * labelOuter * 0.5, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255,255,255,0.55)";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+    ctx.lineWidth = 4;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * hub * 0.5, 0, Math.PI * 2);
     ctx.fillStyle = "#f7fbfe";
     ctx.fill();
-    ctx.strokeStyle = "rgba(170, 200, 220, 0.5)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(170, 200, 220, 0.55)";
+    ctx.lineWidth = 3;
     ctx.stroke();
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(55, 72, 92, 0.55)";
-    ctx.font = `400 ${Math.round(size * 0.032)}px ${fontDisplay()}`;
-    ctx.fillText("夏のボーイフレンド", size / 2, size * 0.36);
-    ctx.fillStyle = "rgba(90, 115, 135, 0.4)";
-    ctx.font = `400 ${Math.round(size * 0.018)}px ${fontFigtree()}`;
+    ctx.fillStyle = "rgba(55, 74, 96, 0.58)";
+    ctx.font = `500 ${Math.round(size * 0.045)}px ${fontScript()}`;
+    ctx.fillText("Slow Bright", size / 2, size * 0.35);
+    ctx.fillStyle = "rgba(95, 120, 140, 0.42)";
+    ctx.font = `500 ${Math.round(size * 0.016)}px ${fontFigtree()}`;
     ctx.fillText("OWN", size / 2, size * 0.64);
   });
 }
@@ -255,13 +290,13 @@ function createDataSideTexture() {
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, size, size);
 
-    for (let r = 70; r < size * 0.48; r += 2.5) {
-      const t = (r - 70) / (size * 0.48 - 70);
+    for (let r = 90; r < size * 0.48; r += 2) {
+      const t = (r - 90) / (size * 0.48 - 90);
       const hue = 190 + t * 25;
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `hsla(${hue}, 28%, ${55 + (r % 5)}%, ${0.06 + (r % 4) * 0.01})`;
-      ctx.lineWidth = 1.1;
+      ctx.strokeStyle = `hsla(${hue}, 28%, ${55 + (r % 5)}%, ${0.05 + (r % 4) * 0.01})`;
+      ctx.lineWidth = 1.2;
       ctx.stroke();
     }
 
