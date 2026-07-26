@@ -457,26 +457,14 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     held.discGroup.scale.setScalar(0.01);
     root.add(held.discGroup);
 
-    const shadowGeo = new THREE.PlaneGeometry(4.2, 3.7);
-    shadowGeo.rotateX(-Math.PI / 2);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x0a0c10,
-      transparent: true,
-      opacity: 0.24,
-      depthWrite: false,
-    });
-    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.position.set(0, -1.85, 0);
-    scene.add(shadow);
-
-    scene.add(new THREE.AmbientLight(0xfff4e8, 0.55));
-    const key = new THREE.DirectionalLight(0xfff7ef, 2.8);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
     key.position.set(-3.5, 5.5, 4.5);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x9eb8c8, 1.2);
+    const fill = new THREE.DirectionalLight(0xffffff, 1.1);
     fill.position.set(4, 1.5, 2);
     scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffc9a0, 1.4);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.9);
     rim.position.set(2, -1, -4);
     scene.add(rim);
 
@@ -743,11 +731,6 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
         }
       }
 
-      const discBias = transition;
-      shadowMat.opacity =
-        0.18 + Math.min(0.1, (Math.abs(velocityX) + Math.abs(velocityY)) * 0.002);
-      shadow.scale.set(1 - discBias * 0.12, 1, 1 - discBias * 0.12);
-
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(animate);
     };
@@ -763,8 +746,6 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       caseDisposables.forEach((item) => item.dispose());
       seated.disposables.forEach((item) => item.dispose());
       held.disposables.forEach((item) => item.dispose());
-      shadowGeo.dispose();
-      shadowMat.dispose();
       jacketTexture.dispose();
       backTexture.dispose();
       spineTexture.dispose();
