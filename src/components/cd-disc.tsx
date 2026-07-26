@@ -414,19 +414,23 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     if (!container) return;
 
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
     camera.position.set(0, 0.85, 7.6);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
-      alpha: true,
+      alpha: false,
       antialias: true,
       powerPreference: "high-performance",
     });
+    renderer.setClearColor(0xffffff, 1);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
+    renderer.shadowMap.enabled = false;
     container.appendChild(renderer.domElement);
 
     const jacketTexture = createJacketTexture();
@@ -457,16 +461,19 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     held.discGroup.scale.setScalar(0.01);
     root.add(held.discGroup);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.05));
+    const key = new THREE.DirectionalLight(0xffffff, 2.1);
     key.position.set(-3.5, 5.5, 4.5);
+    key.castShadow = false;
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0xffffff, 1.1);
-    fill.position.set(4, 1.5, 2);
+    const fill = new THREE.DirectionalLight(0xffffff, 1.35);
+    fill.position.set(4, 2.5, 3);
+    fill.castShadow = false;
     scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.9);
-    rim.position.set(2, -1, -4);
-    scene.add(rim);
+    const bounce = new THREE.DirectionalLight(0xffffff, 1.2);
+    bounce.position.set(0, -4, 2);
+    bounce.castShadow = false;
+    scene.add(bounce);
 
     let audioContext: AudioContext | null = null;
     const ensureAudio = () => {
