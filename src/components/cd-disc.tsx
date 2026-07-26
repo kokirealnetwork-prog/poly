@@ -3,20 +3,35 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const OUTER_RADIUS = 2;
-const INNER_RADIUS = 0.3;
-const HUB_RADIUS = 0.72;
-const DISC_THICKNESS = 0.055;
+const OUTER_RADIUS = 1;
+const INNER_RADIUS = 0.15;
+const HUB_RADIUS = 0.36;
+const DISC_THICKNESS = 0.028;
 
-const CASE_W = 3.55;
-const CASE_H = 3.15;
-const CASE_D = 0.32;
+const CASE_W = 1.78;
+const CASE_H = 1.58;
+const CASE_D = 0.16;
 
 type ViewMode = "jacket" | "disc";
 
 type CdDiscProps = {
   onViewChange?: (view: ViewMode) => void;
 };
+
+function cssFont(cssVar: string, fallback: string) {
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(cssVar)
+    .trim();
+  return value ? `${value}, ${fallback}` : fallback;
+}
+
+function fontSyne() {
+  return cssFont("--font-syne", "Syne, sans-serif");
+}
+
+function fontFigtree() {
+  return cssFont("--font-figtree", "Figtree, sans-serif");
+}
 
 function createCanvasTexture(
   draw: (ctx: CanvasRenderingContext2D, size: number) => void,
@@ -34,77 +49,111 @@ function createCanvasTexture(
 }
 
 function paintAlbumArt(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  const gradient = ctx.createRadialGradient(
-    w * 0.42,
-    h * 0.35,
-    w * 0.05,
-    w * 0.5,
-    h * 0.5,
-    w * 0.72,
-  );
-  gradient.addColorStop(0, "#f4e4c8");
-  gradient.addColorStop(0.35, "#c47a4a");
-  gradient.addColorStop(0.7, "#2f4f5a");
-  gradient.addColorStop(1, "#121820");
-  ctx.fillStyle = gradient;
+  // Contemporary editorial cover: soft graphite field, ice accent, bold type
+  ctx.fillStyle = "#14161a";
   ctx.fillRect(0, 0, w, h);
 
+  // Soft vertical wash
+  const wash = ctx.createLinearGradient(0, 0, w * 0.85, h);
+  wash.addColorStop(0, "rgba(90, 120, 130, 0.0)");
+  wash.addColorStop(0.45, "rgba(120, 170, 175, 0.18)");
+  wash.addColorStop(1, "rgba(200, 245, 120, 0.12)");
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, w, h);
+
+  // Large geometric ring — modern CD motif
   ctx.save();
-  ctx.globalAlpha = 0.18;
-  for (let i = 0; i < 18; i += 1) {
-    const y = h * (0.18 + i * 0.04);
-    ctx.fillStyle = i % 3 === 0 ? "#ffd9a0" : "#8ec8d8";
-    ctx.fillRect(w * 0.08, y, w * 0.84, 2 + (i % 2));
+  ctx.translate(w * 0.68, h * 0.58);
+  ctx.strokeStyle = "rgba(232, 244, 236, 0.9)";
+  ctx.lineWidth = w * 0.018;
+  ctx.beginPath();
+  ctx.arc(0, 0, w * 0.28, -Math.PI * 0.15, Math.PI * 1.1);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(190, 245, 110, 0.85)";
+  ctx.lineWidth = w * 0.006;
+  ctx.beginPath();
+  ctx.arc(0, 0, w * 0.34, Math.PI * 0.2, Math.PI * 1.35);
+  ctx.stroke();
+  // Solid accent disc
+  ctx.fillStyle = "#bef56e";
+  ctx.beginPath();
+  ctx.arc(-w * 0.02, -h * 0.08, w * 0.045, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Fine grid hint (very subtle)
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 12; i += 1) {
+    const x = (w / 12) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, h * 0.08);
+    ctx.lineTo(x, h * 0.92);
+    ctx.stroke();
   }
   ctx.restore();
 
-  ctx.fillStyle = "rgba(255,245,230,0.94)";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `500 ${Math.round(w * 0.055)}px 'Cormorant Garamond', Georgia, serif`;
-  ctx.fillText("MIDNIGHT COMMUTE", w / 2, h * 0.42);
-  ctx.font = `400 ${Math.round(w * 0.032)}px 'Figtree', sans-serif`;
-  ctx.fillStyle = "rgba(255,245,230,0.7)";
-  ctx.fillText("OWN · 所持盤 001", w / 2, h * 0.5);
+  // Typography block — left aligned, contemporary
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "rgba(236, 242, 238, 0.45)";
+  ctx.font = `500 ${Math.round(w * 0.028)}px ${fontFigtree()}`;
+  ctx.fillText("OWN  ·  CATALOG 07", w * 0.08, h * 0.14);
+
+  ctx.fillStyle = "#f4f7f5";
+  ctx.font = `600 ${Math.round(w * 0.092)}px ${fontSyne()}`;
+  ctx.fillText("SOFT", w * 0.08, h * 0.28);
+  ctx.fillText("SIGNAL", w * 0.08, h * 0.38);
+
+  ctx.fillStyle = "rgba(190, 245, 110, 0.95)";
+  ctx.font = `500 ${Math.round(w * 0.03)}px ${fontFigtree()}`;
+  ctx.fillText("digital analogue · vol.01", w * 0.08, h * 0.46);
+
+  ctx.fillStyle = "rgba(236, 242, 238, 0.35)";
+  ctx.font = `400 ${Math.round(w * 0.024)}px ${fontFigtree()}`;
+  ctx.fillText("所持盤", w * 0.08, h * 0.88);
 }
 
 function createJacketTexture() {
   return createCanvasTexture((ctx, size) => {
     paintAlbumArt(ctx, size, size);
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(18, 18, size - 36, size - 36);
   });
 }
 
 function createBackCoverTexture() {
   return createCanvasTexture((ctx, size) => {
-    ctx.fillStyle = "#1a222a";
-    ctx.fillRect(0, 0, size, size);
-    paintAlbumArt(ctx, size, size);
-    ctx.fillStyle = "rgba(10,12,16,0.72)";
+    ctx.fillStyle = "#101214";
     ctx.fillRect(0, 0, size, size);
 
-    ctx.fillStyle = "rgba(243,235,224,0.88)";
+    ctx.fillStyle = "rgba(190, 245, 110, 0.9)";
+    ctx.fillRect(size * 0.08, size * 0.08, size * 0.012, size * 0.12);
+
+    ctx.fillStyle = "#f4f7f5";
     ctx.textAlign = "left";
-    ctx.font = "500 36px 'Cormorant Garamond', Georgia, serif";
-    ctx.fillText("MIDNIGHT COMMUTE", size * 0.12, size * 0.18);
-    ctx.font = "400 22px 'Figtree', sans-serif";
-    ctx.fillStyle = "rgba(243,235,224,0.55)";
-    ctx.fillText("OWN · 所持盤 001", size * 0.12, size * 0.24);
+    ctx.font = `600 ${Math.round(size * 0.048)}px ${fontSyne()}`;
+    ctx.fillText("SOFT SIGNAL", size * 0.12, size * 0.14);
+    ctx.font = `400 ${Math.round(size * 0.024)}px ${fontFigtree()}`;
+    ctx.fillStyle = "rgba(236, 242, 238, 0.45)";
+    ctx.fillText("OWN  ·  CATALOG 07", size * 0.12, size * 0.2);
 
     const tracks = [
-      "01  Platform Light",
-      "02  Last Train Home",
-      "03  Sodium Glow",
-      "04  Underpass",
-      "05  Quiet Carriage",
-      "06  Arrival",
+      ["01", "Warm Boot"],
+      ["02", "Glass Lobby"],
+      ["03", "Low Battery"],
+      ["04", "Afterimage"],
+      ["05", "Soft Signal"],
+      ["06", "Return Path"],
     ];
-    ctx.font = "400 26px 'Figtree', sans-serif";
-    tracks.forEach((track, index) => {
-      ctx.fillStyle = "rgba(243,235,224,0.72)";
-      ctx.fillText(track, size * 0.12, size * (0.38 + index * 0.07));
+    tracks.forEach(([num, title], index) => {
+      const y = size * (0.36 + index * 0.08);
+      ctx.fillStyle = "rgba(190, 245, 110, 0.75)";
+      ctx.font = `500 ${Math.round(size * 0.022)}px ${fontFigtree()}`;
+      ctx.fillText(num, size * 0.12, y);
+      ctx.fillStyle = "rgba(244, 247, 245, 0.85)";
+      ctx.font = `400 ${Math.round(size * 0.028)}px ${fontFigtree()}`;
+      ctx.fillText(title, size * 0.22, y);
     });
   });
 }
@@ -115,19 +164,17 @@ function createSpineTexture() {
   canvas.height = 1024;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    const gradient = ctx.createLinearGradient(0, 0, 0, 1024);
-    gradient.addColorStop(0, "#2f4f5a");
-    gradient.addColorStop(0.5, "#c47a4a");
-    gradient.addColorStop(1, "#121820");
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "#14161a";
     ctx.fillRect(0, 0, 256, 1024);
+    ctx.fillStyle = "#bef56e";
+    ctx.fillRect(0, 0, 256, 28);
     ctx.save();
     ctx.translate(128, 512);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = "rgba(255,245,230,0.9)";
-    ctx.font = "500 42px 'Cormorant Garamond', Georgia, serif";
+    ctx.fillStyle = "#f4f7f5";
+    ctx.font = `600 40px ${fontSyne()}`;
     ctx.textAlign = "center";
-    ctx.fillText("MIDNIGHT COMMUTE  ·  OWN", 0, 12);
+    ctx.fillText("SOFT SIGNAL  ·  OWN", 0, 12);
     ctx.restore();
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -137,32 +184,63 @@ function createSpineTexture() {
 
 function createLabelTexture() {
   return createCanvasTexture((ctx, size) => {
-    paintAlbumArt(ctx, size, size);
+    ctx.fillStyle = "#14161a";
+    ctx.fillRect(0, 0, size, size);
+
+    const wash = ctx.createRadialGradient(
+      size * 0.55,
+      size * 0.45,
+      size * 0.05,
+      size * 0.5,
+      size * 0.5,
+      size * 0.5,
+    );
+    wash.addColorStop(0, "rgba(120, 170, 175, 0.25)");
+    wash.addColorStop(0.6, "rgba(20, 22, 26, 0.1)");
+    wash.addColorStop(1, "#14161a");
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, size, size);
+
+    // Concentric modern rings on label
+    ctx.save();
+    ctx.translate(size / 2, size / 2);
+    for (const [r, color, width] of [
+      [size * 0.42, "rgba(244,247,245,0.2)", 2],
+      [size * 0.34, "rgba(190,245,110,0.55)", 3],
+      [size * 0.26, "rgba(244,247,245,0.12)", 1.5],
+    ] as const) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
 
     const hub = INNER_RADIUS / OUTER_RADIUS;
     const labelOuter = HUB_RADIUS / OUTER_RADIUS;
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * hub * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = "#1a1e24";
+    ctx.fillStyle = "#0c0e10";
     ctx.fill();
 
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * labelOuter * 0.5, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(190,245,110,0.35)";
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(255,245,230,0.92)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = "500 42px 'Cormorant Garamond', Georgia, serif";
-    ctx.fillText("MIDNIGHT COMMUTE", size / 2, size * 0.38);
-    ctx.font = "400 28px 'Figtree', sans-serif";
-    ctx.fillStyle = "rgba(255,245,230,0.72)";
-    ctx.fillText("OWN · 所持盤 001", size / 2, size * 0.46);
-    ctx.font = "600 22px 'Figtree', sans-serif";
-    ctx.fillStyle = "rgba(255,245,230,0.55)";
-    ctx.fillText("SIDE A", size / 2, size * 0.62);
+    ctx.fillStyle = "#f4f7f5";
+    ctx.font = `600 ${Math.round(size * 0.048)}px ${fontSyne()}`;
+    ctx.fillText("SOFT SIGNAL", size / 2, size * 0.34);
+    ctx.fillStyle = "rgba(190, 245, 110, 0.9)";
+    ctx.font = `500 ${Math.round(size * 0.026)}px ${fontFigtree()}`;
+    ctx.fillText("OWN  ·  SIDE A", size / 2, size * 0.42);
+    ctx.fillStyle = "rgba(244, 247, 245, 0.4)";
+    ctx.font = `400 ${Math.round(size * 0.022)}px ${fontFigtree()}`;
+    ctx.fillText("CATALOG 07", size / 2, size * 0.62);
   });
 }
 
@@ -176,24 +254,25 @@ function createDataSideTexture() {
       size / 2,
       size * 0.5,
     );
-    base.addColorStop(0, "#2a3038");
-    base.addColorStop(1, "#0c0e12");
+    base.addColorStop(0, "#2a3238");
+    base.addColorStop(1, "#0a0c0e");
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, size, size);
 
-    for (let r = 80; r < size * 0.48; r += 3) {
-      const t = (r - 80) / (size * 0.48 - 80);
-      const hue = 180 + t * 140;
+    for (let r = 70; r < size * 0.48; r += 2.5) {
+      const t = (r - 70) / (size * 0.48 - 70);
+      // Cool silver → mint iridescence, not rainbow candy
+      const hue = 160 + t * 40;
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `hsla(${hue}, 55%, ${42 + (r % 7)}%, ${0.08 + (r % 5) * 0.015})`;
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = `hsla(${hue}, 35%, ${38 + (r % 6)}%, ${0.07 + (r % 4) * 0.012})`;
+      ctx.lineWidth = 1.1;
       ctx.stroke();
     }
 
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size * 0.14, 0, Math.PI * 2);
-    ctx.fillStyle = "#15181d";
+    ctx.fillStyle = "#101214";
     ctx.fill();
   });
 }
@@ -408,11 +487,51 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     const container = containerRef.current;
     if (!container) return;
 
+    let disposed = false;
+    let cleanupScene: (() => void) | undefined;
+
+    const start = async () => {
+      try {
+        await document.fonts.ready;
+      } catch {
+        // Fonts are optional for first paint; proceed with fallbacks.
+      }
+      if (disposed || !containerRef.current) return;
+
+      cleanupScene = mountScene(containerRef.current, onViewChangeRef);
+      if (disposed) {
+        cleanupScene();
+        cleanupScene = undefined;
+      }
+    };
+
+    void start();
+
+    return () => {
+      disposed = true;
+      cleanupScene?.();
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="cd-disc"
+      role="img"
+      aria-label="ジャケットをタップすると中のCDに切り替わります。ドラッグで回転できます。"
+    />
+  );
+}
+
+function mountScene(
+  container: HTMLDivElement,
+  onViewChangeRef: { current?: (view: ViewMode) => void },
+) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-    camera.position.set(0, 0.35, 7.2);
+    camera.position.set(0, 0.2, 7.2);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -448,7 +567,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     const seated = createDiscGroup(labelTexture, dataTexture);
     seated.discGroup.scale.setScalar(0.72);
     seated.discGroup.rotation.x = -Math.PI / 2;
-    seated.discGroup.position.set(0.06, 0, -0.015);
+    seated.discGroup.position.set(0.03, 0, -0.008);
     caseRoot.add(seated.discGroup);
 
     const held = createDiscGroup(labelTexture, dataTexture);
@@ -540,7 +659,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
     const resetSeatedDisc = () => {
       seated.discGroup.scale.setScalar(0.72);
       seated.discGroup.rotation.x = -Math.PI / 2;
-      seated.discGroup.position.set(0.06, 0, -0.015);
+      seated.discGroup.position.set(0.03, 0, -0.008);
       seated.discGroup.visible = true;
     };
 
@@ -757,14 +876,4 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      className="cd-disc"
-      role="img"
-      aria-label="ジャケットをタップすると中のCDに切り替わります。ドラッグで回転できます。"
-    />
-  );
 }
