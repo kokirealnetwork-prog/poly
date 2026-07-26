@@ -548,7 +548,7 @@ export function CdDisc({ onViewChange }: CdDiscProps) {
       ref={containerRef}
       className="cd-disc"
       role="img"
-      aria-label="ジャケットをタップすると中のCDに切り替わります。ドラッグで回転できます。"
+      aria-label="Tap the jacket to reveal the CD. Drag to rotate."
     />
   );
 }
