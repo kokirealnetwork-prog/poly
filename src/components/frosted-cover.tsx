@@ -21,48 +21,51 @@ function softBlob(
 }
 
 function paintCover(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  // Muted, frosted palette — low saturation like the reference
+  // Higher chroma wash under the frost
   const sky = ctx.createLinearGradient(0, 0, w, h);
-  sky.addColorStop(0, "#2a3340");
-  sky.addColorStop(0.35, "#5c4a48");
-  sky.addColorStop(0.65, "#c4b5a5");
-  sky.addColorStop(1, "#e6ddd2");
+  sky.addColorStop(0, "#1f6fb8");
+  sky.addColorStop(0.28, "#d4554a");
+  sky.addColorStop(0.58, "#f0c56a");
+  sky.addColorStop(1, "#f3e7d4");
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
 
-  softBlob(ctx, w * 0.3, h * 0.25, w * 0.45, "rgba(55, 70, 95, 0.55)");
-  softBlob(ctx, w * 0.75, h * 0.2, w * 0.4, "rgba(140, 75, 70, 0.35)");
-  softBlob(ctx, w * 0.55, h * 0.55, w * 0.5, "rgba(210, 195, 175, 0.45)");
-  softBlob(ctx, w * 0.2, h * 0.7, w * 0.35, "rgba(90, 100, 115, 0.35)");
-  softBlob(ctx, w * 0.8, h * 0.75, w * 0.3, "rgba(230, 220, 205, 0.4)");
+  softBlob(ctx, w * 0.28, h * 0.22, w * 0.48, "rgba(30, 120, 210, 0.55)");
+  softBlob(ctx, w * 0.78, h * 0.18, w * 0.42, "rgba(230, 70, 65, 0.45)");
+  softBlob(ctx, w * 0.55, h * 0.52, w * 0.5, "rgba(255, 200, 90, 0.4)");
+  softBlob(ctx, w * 0.18, h * 0.7, w * 0.36, "rgba(50, 150, 200, 0.35)");
+  softBlob(ctx, w * 0.82, h * 0.78, w * 0.32, "rgba(255, 230, 180, 0.45)");
+  softBlob(ctx, w * 0.45, h * 0.35, w * 0.28, "rgba(255, 120, 90, 0.28)");
 
   for (let i = 0; i < 60; i += 1) {
+    const pick = Math.random();
     softBlob(
       ctx,
       w * Math.random(),
       h * Math.random(),
       w * (0.02 + Math.random() * 0.06),
-      Math.random() > 0.5
-        ? `rgba(255,255,255,${0.04 + Math.random() * 0.08})`
-        : `rgba(40,50,65,${0.05 + Math.random() * 0.1})`,
+      pick > 0.66
+        ? `rgba(255,255,255,${0.06 + Math.random() * 0.1})`
+        : pick > 0.33
+          ? `rgba(40, 140, 230,${0.08 + Math.random() * 0.14})`
+          : `rgba(230, 80, 70,${0.08 + Math.random() * 0.12})`,
     );
   }
 
-  // Heavy frosted / pebbled overlay
+  // Light frost grain — keep color, don't wash it out
   const image = ctx.getImageData(0, 0, w, h);
   const data = image.data;
   for (let i = 0; i < data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 28;
-    data[i] = Math.min(255, Math.max(0, data[i] * 0.92 + n + 18));
-    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * 0.92 + n + 16));
-    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * 0.92 + n + 14));
+    const n = (Math.random() - 0.5) * 16;
+    data[i] = Math.min(255, Math.max(0, data[i] + n));
+    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + n));
+    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + n));
   }
   ctx.putImageData(image, 0, 0);
 
-  // Soft white sheen on top-left edge (sleeve lip)
   const sheen = ctx.createLinearGradient(0, 0, w * 0.45, h * 0.45);
-  sheen.addColorStop(0, "rgba(255,255,255,0.55)");
-  sheen.addColorStop(0.4, "rgba(255,255,255,0.12)");
+  sheen.addColorStop(0, "rgba(255,255,255,0.45)");
+  sheen.addColorStop(0.4, "rgba(255,255,255,0.1)");
   sheen.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = sheen;
   ctx.fillRect(0, 0, w, h);
