@@ -564,7 +564,7 @@ export function CdDisc({
       ref={containerRef}
       className="cd-disc"
       role="img"
-      aria-label="Drag to rotate the album jacket"
+      aria-label="Drag to rotate. Tap to switch between jacket and disc."
     />
   );
 }
@@ -671,32 +671,13 @@ function mountScene(
       osc.stop(start + 0.13);
     };
 
-    const playCaseOpen = () => {
-      if (!audioContext) return;
-      const start = audioContext.currentTime;
-      const osc = audioContext.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(240, start);
-      osc.frequency.exponentialRampToValueAtTime(90, start + 0.22);
-      const gain = audioContext.createGain();
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.11, start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
-      osc.connect(gain).connect(audioContext.destination);
-      osc.start(start);
-      osc.stop(start + 0.3);
-    };
-
     let view: ViewMode = initialView;
     let transition = initialView === "disc" ? 1 : 0;
     let transitionFrom = 0;
     let transitionTo = 0;
     let transitioning = false;
     let transitionStart = 0;
-    const TRANSITION_MS = 620;
-    // Lid opens only this far, then we cut to the disc view.
-    const OPEN_CUT = 0.38;
-    const LID_OPEN_ANGLE = 0.95;
+    const TRANSITION_MS = 480;
 
     let dragging = false;
     let previousX = 0;
@@ -718,7 +699,7 @@ function mountScene(
     };
 
     const beginTransition = (next: ViewMode) => {
-      if (transitioning || next === view) return;
+      if (transitioning || next === view || jacketOnly) return;
       transitioning = true;
       transitionStart = performance.now();
       transitionFrom = transition;
@@ -726,19 +707,24 @@ function mountScene(
       view = next;
       onViewChangeRef.current?.(next);
       ensureAudio();
-      playCaseOpen();
-      navigator.vibrate?.(16);
+      playPlasticTick();
+      navigator.vibrate?.(12);
 
+      lid.rotation.y = 0;
       if (next === "disc") {
-        // Keep disc view hidden until the mid-open cut.
-        held.discGroup.visible = false;
-        held.discGroup.scale.setScalar(0.01);
         caseRoot.visible = true;
+        caseRoot.scale.setScalar(1);
+        held.discGroup.visible = false;
+        held.discGroup.scale.setScalar(0.92);
+        held.discGroup.position.set(0, 0, 0);
+        held.discGroup.rotation.x = 0;
         resetSeatedDisc();
-        lid.rotation.y = 0;
       } else {
-        caseRoot.visible = false;
         held.discGroup.visible = true;
+        held.discGroup.scale.setScalar(1);
+        caseRoot.visible = false;
+        caseRoot.scale.setScalar(0.92);
+        resetSeatedDisc();
       }
       velocityX = 0;
       velocityY = 0;
@@ -796,7 +782,6 @@ function mountScene(
         movedDistance < TAP_MAX_MOVEMENT && heldDuration < TAP_MAX_DURATION_MS;
 
       if (isTap && !transitioning && !jacketOnly) {
-        playPlasticTick();
         beginTransition(view === "jacket" ? "disc" : "jacket");
       }
     };
@@ -830,47 +815,39 @@ function mountScene(
         const t = easeInOut(raw);
         transition = transitionFrom + (transitionTo - transitionFrom) * t;
         const opening = transitionTo > transitionFrom;
+        // Slight grow → settle pulse while swapping jacket ↔ disc
+        const pulse = 1 + Math.sin(t * Math.PI) * 0.07;
+
+        lid.rotation.y = 0;
+        caseRoot.position.set(0, 0, 0);
+        held.discGroup.position.set(0, 0, 0);
+        held.discGroup.rotation.x = 0;
 
         if (opening) {
-          // Phase 1: lid opens a little — disc stays seated, no piercing.
-          if (transition < OPEN_CUT) {
-            const openT = transition / OPEN_CUT;
-            lid.rotation.y = -openT * LID_OPEN_ANGLE;
+          if (t < 0.5) {
             caseRoot.visible = true;
-            caseRoot.scale.setScalar(1);
-            caseRoot.position.set(0, 0, 0);
-            resetSeatedDisc();
+            caseRoot.scale.setScalar(pulse);
             held.discGroup.visible = false;
-            held.discGroup.scale.setScalar(0.01);
-          } else {
-            // Phase 2: cut short — hide jacket, reveal CD.
-            caseRoot.visible = false;
-            lid.rotation.y = 0;
             resetSeatedDisc();
-            const reveal = (transition - OPEN_CUT) / (1 - OPEN_CUT);
+          } else {
+            caseRoot.visible = false;
+            caseRoot.scale.setScalar(1);
             held.discGroup.visible = true;
-            held.discGroup.scale.setScalar(0.82 + reveal * 0.18);
-            held.discGroup.position.set(0, (1 - reveal) * 0.25, 0);
-            held.discGroup.rotation.x = (1 - reveal) * -0.35;
+            held.discGroup.scale.setScalar(
+              0.92 + (t - 0.5) * 0.16 + Math.sin((t - 0.5) * 2 * Math.PI) * 0.03,
+            );
           }
+        } else if (t > 0.5) {
+          // Still mostly on the way back — show jacket settling in
+          const local = (1 - t) / 0.5;
+          held.discGroup.visible = false;
+          caseRoot.visible = true;
+          caseRoot.scale.setScalar(0.93 + Math.sin((1 - local) * Math.PI) * 0.07);
+          resetSeatedDisc();
         } else {
-          // Return: CD out, then jacket appears already closed.
-          const closing = 1 - transition;
-          if (closing < 0.45) {
-            const outT = closing / 0.45;
-            held.discGroup.visible = true;
-            held.discGroup.scale.setScalar(1 - outT * 0.9);
-            held.discGroup.position.set(0, outT * 0.2, 0);
-            caseRoot.visible = false;
-          } else {
-            held.discGroup.visible = false;
-            held.discGroup.scale.setScalar(0.01);
-            caseRoot.visible = true;
-            caseRoot.scale.setScalar(1);
-            caseRoot.position.set(0, 0, 0);
-            lid.rotation.y = 0;
-            resetSeatedDisc();
-          }
+          held.discGroup.visible = true;
+          held.discGroup.scale.setScalar(pulse);
+          caseRoot.visible = false;
         }
 
         if (raw >= 1) {
@@ -878,13 +855,14 @@ function mountScene(
           transition = transitionTo;
           if (transitionTo === 1) {
             caseRoot.visible = false;
+            caseRoot.scale.setScalar(1);
             held.discGroup.visible = true;
             held.discGroup.scale.setScalar(1);
             held.discGroup.position.set(0, 0, 0);
             held.discGroup.rotation.x = 0;
           } else {
             held.discGroup.visible = false;
-            held.discGroup.scale.setScalar(0.01);
+            held.discGroup.scale.setScalar(0.92);
             held.discGroup.position.set(0, 0, 0);
             held.discGroup.rotation.x = 0;
             caseRoot.visible = true;

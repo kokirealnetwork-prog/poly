@@ -174,16 +174,21 @@ button {
 }
 
 .player-meta {
-  display: grid;
-  grid-template-columns: 2rem 1fr 2rem;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
   text-align: center;
   padding: 0.25rem 0 0.75rem;
 }
 
 .player-copy {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-title {
@@ -192,20 +197,25 @@ button {
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .player-artist {
-  margin: 0.2rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--muted);
   font-size: 0.95rem;
   font-weight: 400;
+  line-height: 1.2;
 }
 
 .player-chevron {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
   color: var(--muted);
-  font-size: 1.6rem;
-  line-height: 1;
-  padding: 0.4rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
 }
 
 .player-actions {
