@@ -343,19 +343,27 @@ export function CdDisc({
 
     const start = async () => {
       try {
-        await document.fonts.ready;
+        await Promise.race([
+          document.fonts.ready,
+          new Promise<void>((resolve) => setTimeout(resolve, 800)),
+        ]);
       } catch {
         // Fonts are optional for first paint; proceed with fallbacks.
       }
       if (disposed || !containerRef.current) return;
 
-      cleanupScene = mountScene(
-        containerRef.current,
-        onViewChangeRef,
-        initialViewRef.current,
-        jacketOnlyRef.current,
-        albumIdRef.current,
-      );
+      try {
+        cleanupScene = mountScene(
+          containerRef.current,
+          onViewChangeRef,
+          initialViewRef.current,
+          jacketOnlyRef.current,
+          albumIdRef.current,
+        );
+      } catch (error) {
+        console.error("[CdDisc] failed to mount scene", error);
+        return;
+      }
       if (disposed) {
         cleanupScene();
         cleanupScene = undefined;
@@ -397,7 +405,8 @@ function mountScene(
     const renderer = new THREE.WebGLRenderer({
       alpha: false,
       antialias: true,
-      powerPreference: "high-performance",
+      powerPreference: "default",
+      failIfMajorPerformanceCaveat: false,
     });
     renderer.setClearColor(0xf2f2f4, 1);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
